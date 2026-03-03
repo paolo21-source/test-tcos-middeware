@@ -1,0 +1,43 @@
+---
+# OpenStack Authentication Variables
+# Queste verranno sovrascritte da AWX tramite survey o variabili d'ambiente
+openstack_auth_url: "https://openstack.host:5000/v3"
+openstack_user_id: "{{ lookup('env', 'OS_USER_ID') }}"
+openstack_password: "{{ lookup('env', 'OS_PASSWORD') }}"
+openstack_admin_project_id: "{{ lookup('env', 'OS_ADMIN_PROJECT_ID') }}"
+
+# Root project ID for MASTER projects (usually same as admin_project_id)
+root_project_id: "{{ lookup('env', 'ROOT_PROJECT_ID') | default(openstack_admin_project_id, true) }}"
+
+# OpenStack Service Endpoints
+nova_endpoint: "https://openstack.host:8774/v2.1/{{ openstack_admin_project_id }}"
+neutron_endpoint: "https://openstack.host:9696/v2.0"
+cinder_endpoint: "https://openstack.host:8776/v3/{{ openstack_admin_project_id }}"
+
+# RBAC Configuration
+sync_user_id: "{{ lookup('env', 'SYNC_USER_ID') }}"
+sync_role_id: "{{ lookup('env', 'SYNC_ROLE_ID') }}"
+group_domain_id: "{{ lookup('env', 'GROUP_DOMAIN_ID') }}"
+keycloak_users_domain_id: "{{ lookup('env', 'KEYCLOAK_USERS_DOMAIN_ID') | default(group_domain_id, true) }}"
+active_group_role_id: "{{ lookup('env', 'ACTIVE_GROUP_ROLE_ID') }}"
+suspended_group_role_id: "{{ lookup('env', 'SUSPENDED_GROUP_ROLE_ID') }}"
+cancelled_group_role_id: "{{ lookup('env', 'CANCELLED_GROUP_ROLE_ID') }}"
+
+# Request Data (passed by middleware)
+request_id: ""
+product_id: ""
+hub_id: ""
+user_id: ""
+subscription_id: ""
+external_id: ""
+activation_template_id: ""
+user_email: ""
+
+# Quota Configuration
+# NOTE: Quotes are passed ONLY when they need to be set
+# If a quota variable is not defined, it won't be updated (keeps existing value)
+# quota_vcpu: 0
+# quota_ram_mb: 0
+# quota_storage_gb: 0
+# quota_backup_gb: 0
+# quota_floating_ip: 0

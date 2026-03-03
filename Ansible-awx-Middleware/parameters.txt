@@ -1,0 +1,142 @@
+//PURCHASE REQUEST
+
+ public void handlePurchaseRequest(
+            String providerClientTag,
+            boolean isFirstSubscription,
+            String activationTemplateId,
+            CloudBlueRequest request,
+            Set<ResourceQuota> requestResourceQuota) {
+
+        Map<String, Object> extraVars = new HashMap<>();
+        extraVars.put(AwxLaunchRequestExtraVars.PROVIDER_CLIENT_TAG_KEY, providerClientTag);
+        extraVars.put(AwxLaunchRequestExtraVars.EXTERNAL_ID_KEY, request.externalId());
+        extraVars.put(AwxLaunchRequestExtraVars.REQUEST_ID_KEY, request.id());
+        extraVars.put(AwxLaunchRequestExtraVars.PRODUCT_ID_KEY, request.productId());
+        extraVars.put(AwxLaunchRequestExtraVars.HUB_ID_KEY, request.hubId());
+        extraVars.put(AwxLaunchRequestExtraVars.USER_ID_KEY, request.userId());
+        extraVars.put(AwxLaunchRequestExtraVars.USER_EMAIL_KEY, request.emailAddress());
+        extraVars.put(AwxLaunchRequestExtraVars.SUBSCRIPTION_ID_KEY, request.subscriptionId());
+        extraVars.put(AwxLaunchRequestExtraVars.IS_FIRST_SUBSCRIPTION_KEY, isFirstSubscription);
+        extraVars.put(AwxLaunchRequestExtraVars.ACTIVATION_TEMPLATE_ID_KEY, activationTemplateId);
+        extraVars.putAll(mapQuotasToExtraVars(requestResourceQuota));
+
+        launchJobTemplate(
+                awxClientProperties.getPurchaseRequestJobId(),
+                AwxLaunchRequest.builder()
+                        .extraVars(extraVars)
+                        .build());
+    }
+ 
+private String mapQuotaToExtraVar(ResourceQuota quota) {
+        return switch (quota.name()) {
+            case VCPU, VCPU_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_VCPU_KEY;
+            case RAM, RAM_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_RAM_KEY;
+            case STORAGE, STORAGE_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_STORAGE_KEY;
+            case PUB_IP, PUB_IP_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_PUB_IP_KEY;
+            case BACKUP, BACKUP_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_BACKUP_KEY;
+            case MSWINSVR_LICENSE, MSWINSVR_LICENSE_PAY_AS_YOU_GO ->
+                    AwxLaunchRequestExtraVars.QUOTA_MSWINSVR_LICENSE_KEY;
+            case RHLINENT_LICENSE, RHLINENT_LICENSE_PAY_AS_YOU_GO ->
+                    AwxLaunchRequestExtraVars.QUOTA_RHLINENT_LICENSE_KEY;
+        };
+
+
+-----------------------------------
+-----------------------------------
+
+
+//CHANGE REQUEST
+
+
+ public void handleChangeRequest(
+            String providerClientTag,
+            String externalId,
+            Set<ResourceQuota> requestResourceQuota) {
+
+        Map<String, Object> extraVars = new HashMap<>();
+        extraVars.put(AwxLaunchRequestExtraVars.PROVIDER_CLIENT_TAG_KEY, providerClientTag);
+        extraVars.put(AwxLaunchRequestExtraVars.EXTERNAL_ID_KEY, externalId);
+        extraVars.putAll(mapQuotasToExtraVars(requestResourceQuota));
+
+        launchJobTemplate(
+                awxClientProperties.getChangeRequestJobId(),
+                AwxLaunchRequest.builder()
+                        .extraVars(extraVars)
+                        .build());
+    }
+
+ private String mapQuotaToExtraVar(ResourceQuota quota) {
+        return switch (quota.name()) {
+            case VCPU, VCPU_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_VCPU_KEY;
+            case RAM, RAM_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_RAM_KEY;
+            case STORAGE, STORAGE_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_STORAGE_KEY;
+            case PUB_IP, PUB_IP_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_PUB_IP_KEY;
+            case BACKUP, BACKUP_PAY_AS_YOU_GO -> AwxLaunchRequestExtraVars.QUOTA_BACKUP_KEY;
+            case MSWINSVR_LICENSE, MSWINSVR_LICENSE_PAY_AS_YOU_GO ->
+                    AwxLaunchRequestExtraVars.QUOTA_MSWINSVR_LICENSE_KEY;
+            case RHLINENT_LICENSE, RHLINENT_LICENSE_PAY_AS_YOU_GO ->
+                    AwxLaunchRequestExtraVars.QUOTA_RHLINENT_LICENSE_KEY;
+        };
+
+
+
+
+-------------------------------------------
+-------------------------------------------
+
+
+
+//SUSPEND, REQUEST, RESUME REQUEST, CANCEL REQUEST
+
+
+  public void handleSuspendRequest(String providerClientTag, String externalId) {
+        launchJobTemplate(
+                awxClientProperties.getSuspendRequestJobId(),
+                AwxLaunchRequest.builder()
+                        .extraVars(Map.of(
+                                AwxLaunchRequestExtraVars.PROVIDER_CLIENT_TAG_KEY, providerClientTag,
+                                AwxLaunchRequestExtraVars.EXTERNAL_ID_KEY, externalId))
+                        .build());
+    }
+
+
+
+
+
+---------------------------------------
+---------------------------------------
+
+
+
+
+
+//SET QUOTAS 
+
+Nova
+ private void reserveQuotasOnNova(String projectId, Map<ResourceQuotaName, BigDecimal> quotas) {
+        Optional<Integer> optVCPU = getOptionalQuota(quotas.get(ResourceQuotaName.VCPU));
+        Optional<Integer> optRam = getOptionalQuota(quotas.get(ResourceQuotaName.RAM))
+                .map(resource -> resource * 1024);
+        if (optVCPU.isEmpty() && optRam.isEmpty()) {
+            log.debug("No resource quota to reserve on nova for os project [{}].", projectId);
+            return;
+        }
+Cinder
+ Optional<Integer> optStorage = getOptionalQuota(quotas.get(ResourceQuotaName.STORAGE));
+        Optional<Integer> optBackupGigabytes = getOptionalQuota(quotas.get(ResourceQuotaName.BACKUP));
+        if (optStorage.isEmpty() && optBackupGigabytes.isEmpty()) {
+            log.debug("No resource quota to reserve on cinder for os project [{}].", projectId);
+            return;
+        }
+
+        log.trace(
+                "Retrieving existing cinder quota for os project [{}] to preserve current values.",
+                projectId);
+Neutron
+   Optional<Integer> optPubIP = getOptionalQuota(quota.get(ResourceQuotaName.PUB_IP));
+        if (optPubIP.isEmpty()) {
+            log.debug("No resource quota to reserve on neutron for os project [{}].", projectId);
+            return;
+        }
+
+        log.trace("Retrieving existing neutron quota for os project [{}].", projectId);

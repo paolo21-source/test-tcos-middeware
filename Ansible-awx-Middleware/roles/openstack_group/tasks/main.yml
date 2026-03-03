@@ -1,0 +1,75 @@
+---
+# roles/openstack_group/tasks/main.yml
+
+- name: Check if group exists by name and domain
+  uri:
+    url: "{{ openstack_auth_url }}/groups?name={{ group_name }}&domain_id={{ group_domain_id }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 200
+    return_content: yes
+  register: group_search
+
+- name: Set group_exists flag
+  set_fact:
+    group_exists: "{{ group_search.json.groups | length > 0 }}"
+    group_id: "{{ group_search.json.groups[0].id if group_search.json.groups | length > 0 else '' }}"
+
+- name: Display group existence status
+  debug:
+    msg: "Group '{{ group_name }}' {{ 'exists (ID: ' + group_id + ')' if group_exists else 'does not exist' }}"
+
+- name: Create OpenStack group (if not exists)
+  uri:
+    url: "{{ openstack_auth_url }}/groups"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      group:
+        name: "{{ group_name }}"
+        domain_id: "{{ group_domain_id }}"
+    status_code: 201
+    return_content: yes
+  register: group_create
+  when: not group_exists
+
+- name: Update group_id with newly created group
+  set_fact:
+    group_id: "{{ group_create.json.group.id }}"
+  when: 
+    - not group_exists
+    - group_create.json.group.id is defined
+
+
+#Questi ultimi due vanno spostati in un ruolo a parte, tipo openstack_role_assignment, che si occupa di assegnare i ruoli ai progetti, agli utenti e ai gruppi. In questo modo si mantiene il ruolo openstack_group focalizzato solo sulla gestione dei gruppi, mentre il ruolo openstack_role_assignment si occupa della gestione delle assegnazioni dei ruoli.
+#Al progetto subscription vanno assegnati i gruppi dei master e del progetto subscription, mentre al progetto subscription-dev vanno assegnati i gruppi dei master e del progetto subscription-dev. In questo modo si mantiene una chiara separazione tra i gruppi e le assegnazioni dei ruoli, facilitando la gestione e la manutenzione dell'infrastruttura OpenStack.
+
+- name: Check if group role is assigned to project
+  uri:
+    url: "{{ openstack_auth_url }}/projects/{{ target_project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: [204, 404]
+  register: group_role_check
+  when: 
+    - grant_role | default(false)
+    - target_project_id is defined
+    - role_id is defined
+
+- name: Grant group role on project (if not already assigned)
+  uri:
+    url: "{{ openstack_auth_url }}/projects/{{ target_project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
+    method: PUT
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 204
+  when: 
+    - grant_role | default(false)
+    - target_project_id is defined
+    - role_id is defined
+    - group_role_check.status == 404

@@ -1,0 +1,155 @@
+---
+# playbooks/purchase_subsequent_subscription.yml
+# PURCHASE - Subsequent Subscription
+# Segue la logica: RETRIEVE_MASTER -> SETUP_SUBSCRIPTION_PROJECT -> SETUP_QUOTA
+
+- name: Purchase Subsequent Subscription - OpenStack Setup
+  hosts: localhost
+  gather_facts: false
+  
+  vars:
+    is_first_subscription: false
+  
+  tasks:
+    - name: Validate required variables
+      assert:
+        that:
+          - user_id is defined and user_id != ""
+          - external_id is defined and external_id != ""
+          - request_id is defined
+          - parent_project_id is defined and parent_project_id != ""
+          - subscription_id is defined and subscription_id != ""
+          - product_id is defined and product_id != ""
+          - hub_id is defined and hub_id != ""
+          - activation_template_id is defined and activation_template_id != ""
+          - user_email is defined and user_email != ""
+          - is_first_subscription is defined and (is_first_subscription == true or is_first_subscription == false)
+          # Aggiungere tutte le validazioni necessarie per gli altri parametri richiesti dal ruolo openstack_project
+        fail_msg: "Missing required variables: user_id, external_id, request_id"
+
+    - name: Display operation summary
+      debug:
+        msg:
+          - "=== PURCHASE SUBSEQUENT SUBSCRIPTION ==="
+          - "User ID: {{ user_id }}"
+          - "External ID (Asset): {{ external_id }}"
+          - "Request ID: {{ request_id }}"
+# Autenticazione la stessa cosa di prima però con la differenza che prima di autenticarsi va a prendere tramite il parametro passato dal midlleware per l'entry della config map per identificare le credenziali da usare per autenticarsi con OpenStack e settare le variabili necessarie (es. os_token, openstack_auth_url, etc) per i ruoli successivi. In questo modo si evita di hardcodare qualsiasi informazione relativa all'ambiente OpenStack direttamente nel playbook o nei ruoli e si rende tutto più dinamico e configurabile tramite il middleware e la config map.
+# il campo è provider_client_tag  
+#Aggiungere switch provider con tag esempio: provider_type: "{{provider_client_tag}}" in modo da avere in caso più provider possiamo gestire tutto dinamicamente senza dover modificare nulla nei
+
+    # ========================================================================
+    # AUTHENTICATION
+    # ========================================================================
+    - name: Authenticate with OpenStack
+      include_role:
+        name: openstack_auth
+
+    # ========================================================================
+    # STEP 1: RETRIEVE_MASTER_PROJECT_AND_GROUP
+    # ========================================================================
+    - name: "1) Check if MASTER project exists"
+      include_role:
+        name: openstack_project
+        #capire se openstack_project va modificato per essere usato anche solo per il check senza creare nulla, altrimenti va creato un ruolo apposito tipo openstack_project_check che si occupa solo di verificare l'esistenza del progetto e restituire l'id se esiste, altrimenti fallisce. In questo modo si mantiene il ruolo openstack_project focalizzato solo sulla creazione dei progetti, mentre il ruolo openstack_project_check si occupa solo della verifica dell'esistenza dei progetti.
+      vars:
+        project_name: "{{ user_id }}"
+        check_sync_user_role: false
+
+    - name: Verify MASTER project exists (fail if not found)
+      assert:
+        that:
+          - project_id is defined
+          - project_id != ""
+        fail_msg: "ERROR: MASTER project not found for user_id {{ user_id }}. Cannot create subsequent subscription."
+
+    - name: Save MASTER project ID
+      set_fact:
+        master_project_id: "{{ project_id }}"
+
+    - name: "2) Check if MASTER group exists"
+      include_role:
+      # stessa cosa del project anche al gruppo 
+        name: openstack_group
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: false
+
+    - name: Verify MASTER group exists (fail if not found)
+      assert:
+        that:
+          - group_id is defined
+          - group_id != ""
+        fail_msg: "ERROR: MASTER group not found for user_id {{ user_id }}. Cannot create subsequent subscription."
+
+    - name: Save MASTER group ID
+      set_fact:
+        master_group_id: "{{ group_id }}"
+
+    # ========================================================================
+    # STEP 2: SETUP_SUBSCRIPTION_PROJECT
+    # ========================================================================
+    
+    - name: "3) Check and create SUBSCRIPTION project"
+      include_role:
+        name: openstack_project
+      vars:
+        project_name: "{{ external_id }}"
+        project_type: SUBSCRIPTION
+        parent_project_id: "{{ master_project_id }}"
+        check_sync_user_role: true
+
+    - name: Save SUBSCRIPTION project ID
+      set_fact:
+        subscription_project_id: "{{ project_id }}"
+
+    - name: "4) Check and create SUBSCRIPTION group"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ external_id }}"
+        grant_role: false
+
+    - name: Save SUBSCRIPTION group ID
+      set_fact:
+        subscription_group_id: "{{ group_id }}"
+
+    - name: "5) Check and grant ACTIVE role to MASTER group on SUBSCRIPTION project"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: true
+        target_project_id: "{{ subscription_project_id }}"
+        role_id: "{{ active_group_role_id }}"
+
+    - name: "6) Check and grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ external_id }}"
+        grant_role: true
+        target_project_id: "{{ subscription_project_id }}"
+        role_id: "{{ active_group_role_id }}"
+
+    # ========================================================================
+    # STEP 3: SETUP_QUOTA_ON_SUBSCRIPTION_PROJECT
+    # ========================================================================
+    - name: "7) Update quotas on SUBSCRIPTION project (only if different)"
+      include_role:
+        name: openstack_quotas
+      vars:
+        target_project_id: "{{ subscription_project_id }}"
+
+    # ========================================================================
+    # COMPLETION
+    # ========================================================================
+    - name: Display completion summary
+      debug:
+        msg:
+          - "=== SUBSEQUENT SUBSCRIPTION COMPLETED ==="
+          - "MASTER Project ID: {{ master_project_id }}"
+          - "MASTER Group ID: {{ master_group_id }}"
+          - "SUBSCRIPTION Project ID: {{ subscription_project_id }}"
+          - "SUBSCRIPTION Group ID: {{ subscription_group_id }}"
+          - "Status: Active"

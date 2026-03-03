@@ -1,0 +1,110 @@
+# roles/openstack_auth/tasks/main.yml
+---
+- name: Validate provider_client_tag
+  assert:
+    that:
+      - provider_client_tag is defined and provider_client_tag != ""
+    fail_msg: "provider_client_tag is required"
+
+# ============================================================
+# LEGGI LA MAPPA E PRENDI L'ENTRY DEL PROVIDER
+# ============================================================
+- name: Get provider config from map
+  set_fact:
+    provider_config: "{{ providers_config_map[provider_client_tag] }}"
+
+- name: Fail if provider tag not found in config map
+  fail:
+    msg: "Nessuna entry trovata nella config map per provider_client_tag: '{{ provider_client_tag }}'"
+  when: provider_config is not defined or provider_config == ""
+
+# ============================================================
+# VALIDATE
+# ============================================================
+- name: Validate project scope credentials
+  assert:
+    that:
+      - provider_config.projectId is defined
+        or (provider_config.projectName is defined and provider_config.projectDomain is defined)
+    fail_msg: "Either projectId or projectName + projectDomain must be provided."
+
+- name: Validate user credentials
+  assert:
+    that:
+      - provider_config.userId is defined
+        or (provider_config.username is defined and provider_config.userDomain is defined)
+    fail_msg: "Either userId or username + userDomain must be provided."
+
+# ============================================================
+# BUILD PROJECT SCOPE
+# ============================================================
+- name: Set project scope by ID
+  set_fact:
+    auth_project_scope:
+      id: "{{ provider_config.projectId }}"
+  when: provider_config.projectId is defined
+
+- name: Set project scope by name + domain
+  set_fact:
+    auth_project_scope:
+      name: "{{ provider_config.projectName }}"
+      domain:
+        name: "{{ provider_config.projectDomain }}"
+  when: provider_config.projectId is not defined
+
+# ============================================================
+# BUILD USER IDENTITY
+# ============================================================
+- name: Set user credentials by userId
+  set_fact:
+    auth_user_identity:
+      id: "{{ provider_config.userId }}"
+      password: "{{ provider_config.password }}"
+  when: provider_config.userId is defined
+  no_log: true
+
+- name: Set user credentials by username + userDomain
+  set_fact:
+    auth_user_identity:
+      name: "{{ provider_config.username }}"
+      password: "{{ provider_config.password }}"
+      domain:
+        name: "{{ provider_config.userDomain }}"
+  when: provider_config.userId is not defined
+  no_log: true
+
+# ============================================================
+# AUTHENTICATE
+# ============================================================
+- name: Authenticate with OpenStack Keystone
+  uri:
+    url: "{{ provider_config.endpoint }}/auth/tokens"
+    method: POST
+    body_format: json
+    body:
+      auth:
+        identity:
+          methods: ["password"]
+          password:
+            user: "{{ auth_user_identity }}"
+        scope:
+          project: "{{ auth_project_scope }}"
+    status_code: 201
+  register: auth_response
+  no_log: true
+
+# ============================================================
+# SET FACTS - disponibili per tutti i ruoli successivi
+# ============================================================
+- name: Set facts for subsequent roles
+  set_fact:
+    os_token:                   "{{ auth_response.x_subject_token }}"
+    os_endpoint:                "{{ provider_config.endpoint }}"
+    openstack_admin_project_id: "{{ auth_response.json.token.project.id }}"
+    sync_user_id:               "{{ provider_config.syncUserId }}"
+    sync_role_id:               "{{ provider_config.syncRoleId }}"
+    group_domain_id:            "{{ provider_config.groupDomainId }}"
+    active_group_role_id:       "{{ provider_config.activeGroupRoleId }}"
+    suspended_group_role_id:    "{{ provider_config.suspendedGroupRoleId }}"
+    cancelled_group_role_id:    "{{ provider_config.cancelledGroupRoleId }}"
+  no_log: true

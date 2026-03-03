@@ -1,0 +1,23 @@
+- name: Validate openstack_project role arguments
+  assert:
+    that:
+      - project_name is defined and project_name != ""
+
+- name: Check if project exists by name
+  uri:
+    url: "{{ openstack_auth_url }}/projects?name={{ project_name }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 200
+    return_content: yes
+  register: project_search
+
+- name: Set project_exists flag
+  set_fact:
+    project_exists: "{{ project_search.json.projects | length > 0 }}"
+    project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
+
+- name: Display project existence status
+  debug:
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_id + ')' if project_exists else 'does not exist' }}"

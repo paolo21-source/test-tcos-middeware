@@ -1,0 +1,18 @@
+- name: Check if group exists by name and domain
+  uri:
+    url: "{{ openstack_auth_url }}/groups?name={{ group_name }}&domain_id={{ group_domain_id }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 200
+    return_content: yes
+  register: group_search
+
+- name: Set group_exists flag
+  set_fact:
+    group_exists: "{{ group_search.json.groups | length > 0 }}"
+    group_id: "{{ group_search.json.groups[0].id if group_search.json.groups | length > 0 else '' }}"
+
+- name: Display group existence status
+  debug:
+    msg: "Group '{{ group_name }}' {{ 'exists (ID: ' + group_id + ')' if group_exists else 'does not exist' }}"

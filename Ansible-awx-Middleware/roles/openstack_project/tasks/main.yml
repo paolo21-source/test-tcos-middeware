@@ -1,0 +1,95 @@
+---
+# roles/openstack_project/tasks/main.yml
+# Validazione rigorosa di tutti i parametri richiesti
+
+- name: Validate openstack_project role arguments
+  assert:
+    that:
+      - project_name is defined and project_name != ""
+      - parent_project_id is defined and parent_project_id != ""
+      - request_id is defined and request_id != ""
+      - user_id is defined and user_id != ""
+      - external_id is defined and external_id != ""
+      - subscription_id is defined and subscription_id != ""
+      - product_id is defined and product_id != ""
+      - hub_id is defined and hub_id != ""
+      - activation_template_id is defined and activation_template_id != ""
+      - user_email is defined and user_email != ""
+      - is_first_subscription is defined and (is_first_subscription == true or is_first_subscription == false)
+    fail_msg: "Missing required parameters for openstack_project role"
+
+- name: Check if project exists by name
+  uri:
+    url: "{{ openstack_auth_url }}/projects?name={{ project_name }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 200
+    return_content: yes
+  register: project_search
+
+- name: Set project_exists flag
+  set_fact:
+    project_exists: "{{ project_search.json.projects | length > 0 }}"
+    project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
+
+- name: Display project existence status
+  debug:
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_id + ')' if project_exists else 'does not exist' }}"
+
+- name: Create OpenStack project (if not exists)
+  uri:
+    url: "{{ openstack_auth_url }}/projects"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      project:
+        name: "{{ project_name }}"
+        description: "{{ project_description | default('Provider project for customer ' + user_id) }}"
+        parent_id: "{{ parent_project_id | default(openstack_admin_project_id) }}"
+        enabled: true
+        requestId: "{{ request_id | default('') }}"
+        productId: "{{ product_id | default('') }}"
+        hubId: "{{ hub_id | default('') }}"
+        userId: "{{ user_id | default('') }}"
+        subscriptionId: "{{ subscription_id | default('') }}"
+        externalId: "{{ external_id | default('') }}"
+        isFirstSubscription: "{{ is_first_subscription | default('false') }}"
+        activationTemplateId: "{{ activation_template_id | default('') }}"
+        userEmail: "{{ user_email | default('') }}"
+        type: "{{ project_type | default('') }}"
+    status_code: 201
+    return_content: yes
+  register: project_create
+  when: not project_exists
+
+- name: Update project_id with newly created project
+  set_fact:
+    project_id: "{{ project_create.json.project.id }}"
+  when: 
+    - not project_exists
+    - project_create.json.project.id is defined
+
+- name: Check if sync user role is assigned to project
+  uri:
+    url: "{{ openstack_auth_url }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: [204, 404]
+  register: role_check
+  when: check_sync_user_role | default(true)
+
+- name: Assign sync user to project (if not already assigned)
+  uri:
+    url: "{{ openstack_auth_url }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    method: PUT
+    headers:
+      X-Auth-Token: "{{ os_token }}"
+    status_code: 204
+  when: 
+    - check_sync_user_role | default(true)
+    - role_check.status == 404
