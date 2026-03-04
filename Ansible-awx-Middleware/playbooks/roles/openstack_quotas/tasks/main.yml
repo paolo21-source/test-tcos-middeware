@@ -73,20 +73,13 @@
     body_format: json
     body:
       quota_set:
-        gigabytes: 3
-        backup_gigabytes: 4
-        volumes: 5
-        snapshots: 6
-        groups: 7
-        backups: 8
-        per_volume_gigabytes: 9
-        # gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes }}"
-        # backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes }}"
-        # volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
-        # snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
-        # groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
-        # backups: "{{ cinder_quotas_current.json.quota_set.backups }}"
-        # per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes }}"
+        gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes | int }}"
+        backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes | int }}"
+        volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
+        snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
+        groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
+        backups: "{{ cinder_quotas_current.json.quota_set.backups | int}}"
+        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int}}"
     status_code: 200
   when: 
     - quota_checks.cinder_quotas_exists
