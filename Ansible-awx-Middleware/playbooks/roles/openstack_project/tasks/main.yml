@@ -66,7 +66,7 @@
     status_code: 201
     return_content: yes
   register: project_create
-  when: not project_exists
+  when: not project_context.project_exists
 
 - name: Update project_id with newly created project
   set_fact:
