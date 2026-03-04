@@ -1,0 +1,5 @@
+curl -k -v -X POST \
+  https://urlawx/api/v2/job_templates/jobid/launch/ \
+  -H "Content-Type: application/json" \
+  -u "username:password" \
+  -d '{}'
