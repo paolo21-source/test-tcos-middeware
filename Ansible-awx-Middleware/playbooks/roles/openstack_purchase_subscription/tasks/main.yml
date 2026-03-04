@@ -93,7 +93,7 @@
       include_role:
         name: openstack_quotas
       vars:
-        project_id: "{{ master_project_context.master_project_id }}"
+        project_id: "{{ master_project_context.project_id }}"
         quota_vcpu: 0
         quota_ram: 0
         quota_storage: 0
@@ -168,7 +168,7 @@
         is_first_subscription: "{{ is_first_subscription }}"
         activation_template_id: "{{ activation_template_id }}"
         project_type: SUBSCRIPTION
-        parent_project_id: "{{ ensure_project_result.master_project_id }}"
+        parent_project_id: "{{ master_project_context.project_id }}"
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
@@ -209,7 +209,7 @@
       include_role:
         name: openstack_quotas
       vars: 
-        project_id: "{{ subscription_project_id }}"
+        project_id: "{{ subscription_project_context.project_id }}"
         quota_vcpu: "{{ quota_vcpu }}" 
         quota_ram: "{{ quota_ram }}"
         quota_storage: "{{ quota_storage }}"
@@ -226,5 +226,5 @@
           - "MASTER Project ID: {{ master_project_context.project_id }}"
           - "MASTER Group ID: {{ master_project_context.group_id }}"
           - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
-          - "SUBSCRIPTION Group ID: {{ subscription_group_context.group_id }}"
+          - "SUBSCRIPTION Group ID: {{ subscription_project_context.group_id }}"
           - "Status: Active"
