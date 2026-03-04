@@ -64,9 +64,14 @@
   register: cinder_quotas_current
   when: quota_checks.cinder_quotas_exists
 
-- name: Debug Cinder quota body
+- name: Debug 
   debug:
-    msg: "{{ cinder_quotas_current.json.quota_set }}"
+    msg: 
+      - "quota_storage passato:    {{ quota_storage | default('NON DEFINITO') }}"
+      - "quota_backup passato:     {{ quota_backup | default('NON DEFINITO') }}"
+      - "gigabytes attuale:        {{ cinder_quotas_current.json.quota_set.gigabytes }}"
+      - "backup_gigabytes attuale: {{ cinder_quotas_current.json.quota_set.backup_gigabytes }}"
+      - "cinder_quotas_exists:     {{ quota_checks.cinder_quotas_exists }}"
 
 - name: Update Cinder quotas (only if different)
   uri:
@@ -83,8 +88,8 @@
         volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
         snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
         groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
-        backups: "{{ cinder_quotas_current.json.quota_set.backups | int }}"
-        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int }}"
+        backups: "{{ cinder_quotas_current.json.quota_set.backups }}"
+        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes }}"
     status_code: 200
   when: 
     - quota_checks.cinder_quotas_exists
@@ -120,7 +125,7 @@
     body_format: json
     body:
       quota:
-        floatingip: "{{ quota_floating_ip | int if quota_floating_ip is defined else neutron_quotas_current.json.quota.floatingip }}"
+        floatingip: "{{ quota_pub_ip | int if quota_pub_ip is defined else neutron_quotas_current.json.quota.floatingip }}"
         network: "{{ neutron_quotas_current.json.quota.network }}"
         subnet: "{{ neutron_quotas_current.json.quota.subnet }}"
         port: "{{ neutron_quotas_current.json.quota.port }}"
@@ -130,7 +135,7 @@
     status_code: 200
   when: 
     - quota_checks.neutron_quotas_exists
-    - (quota_floating_ip | int != neutron_quotas_current.json.quota.floatingip | int)
+    - (quota_pub_ip | int != neutron_quotas_current.json.quota.floatingip | int)
 
 
 - name: Display quota update summary
@@ -141,4 +146,4 @@
       - "RAM (MB): {{ 'updated to ' + (quota_ram | string) if (quota_checks.nova_needs_update | default(false) and quota_ram is defined) else 'unchanged' }}"
       - "Storage (GB): {{ 'updated to ' + (quota_storage| string) if (quota_checks.cinder_needs_update | default(false) and quota_storage is defined) else 'unchanged' }}"
       - "Backup (GB): {{ 'updated to ' + (quota_backup | string) if (quota_checks.cinder_needs_update | default(false) and quota_backup is defined) else 'unchanged' }}"
-      - "Floating IPs: {{ 'updated to ' + (quota_floating_ip | string) if (quota_checks.neutron_needs_update | default(false) and quota_floating_ip is defined) else 'unchanged' }}"
+      - "Floating IPs: {{ 'updated to ' + (quota_pub_ip | string) if (quota_checks.neutron_needs_update | default(false) and quota_pub_ip is defined) else 'unchanged' }}"

@@ -97,7 +97,7 @@
         quota_vcpu: 0
         quota_ram: 0
         quota_storage: 0
-        quota_floating_ip: 0
+        quota_pub_ip: 0
         quota_backup: 0
       when: is_first_subscription | bool
 
@@ -213,7 +213,7 @@
         quota_vcpu: "{{ quota_vcpu }}" 
         quota_ram: "{{ quota_ram }}"
         quota_storage: "{{ quota_storage }}"
-        quota_floating_ip: "{{ quota_floating_ip }}"
+        quota_pub_ip: "{{ quota_pub_ip }}"
         quota_backup: "{{ quota_backup }}"
 
     # ========================================================================
