@@ -42,18 +42,18 @@
 
     - name: Parse providers config map
       set_fact:
-        providers_secret: "{{ providers_secret | from_yaml }}"
+        secret_yaml: "{{ credentials_yaml | from_yaml }}"
     - name: Debug providers config
       debug:
-        var: providers_secret
+        var: secret_yaml
     - name: Fail if provider tag not found
       fail:
         msg: "Nessuna entry per provider_client_tag: '{{ provider_client_tag }}'"
-      when: provider_client_tag not in providers_secret
+      when: provider_client_tag not in secret_yaml
 
     - name: Get provider config
       set_fact:
-        provider_secret: "{{ providers_secret[provider_client_tag] }}"
+        provider_secret: "{{ secret_yaml[provider_client_tag] }}"
     
 
     # ========================================================================
