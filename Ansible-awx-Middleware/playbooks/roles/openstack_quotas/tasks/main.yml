@@ -5,7 +5,7 @@
     quota_checks:
       nova_quotas_exists: "{{ (quota_vcpu is defined and quota_vcpu | int) or (quota_ram is defined and quota_ram | int) }}"
       cinder_quotas_exists: "{{ quota_storage is defined and quota_storage | int or quota_backup is defined and quota_backup | int }}"
-      neutron_quotas_exists: "{{ quota_floating_ip is defined and quota_floating_ip | int }}"
+      neutron_quotas_exists: "{{ quota_pub_ip is defined and quota_pub_ip | int }}"
     
 # ============================================================================
 # NOVA QUOTAS (CPU and RAM)
