@@ -1,0 +1,19 @@
+---
+- name: Check if group role is assigned to project
+  uri:
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
+    method: GET
+    headers:
+      X-Auth-Token: "{{ auth_context.provider_token }}"
+    status_code: [204, 404]
+  register: group_role_check
+
+- name: Grant group role on project (if not already assigned)
+  uri:
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
+    method: PUT
+    headers:
+      X-Auth-Token: "{{ auth_context.provider_token }}"
+    status_code: 204
+  when: 
+    - group_role_check.status == 404

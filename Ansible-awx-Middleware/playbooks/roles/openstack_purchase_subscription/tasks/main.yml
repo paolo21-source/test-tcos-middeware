@@ -188,19 +188,19 @@
 
     - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
       include_role:
-        name: openstack_group
+        name: openstack_project_group_role
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ master_project_context.group_id }}"
-        role_id: "{{ active_group_role_id }}"
+        role_id: "{{ provider_secret.activeGroupRoleId }}"
 
     - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
       include_role:
-        name: openstack_group
+        name: openstack_project_group_role
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ subscription_group_context.group_id }}"
-        role_id: "{{ active_group_role_id }}"
+        role_id: "{{ provider_secret.activeGroupRoleId }}"
 
     # ========================================================================
     # STEP 3: SETUP QUOTA ON SUBSCRIPTION PROJECT (comune)

@@ -13,12 +13,13 @@
 
 - name: Set group_exists flag
   set_fact:
-    group_exists: "{{ group_search.json.groups | length > 0 }}"
-    group_id: "{{ group_search.json.groups[0].id if group_search.json.groups | length > 0 else '' }}"
+    group_context:
+      group_exists: "{{ group_search.json.groups | length > 0 }}"
+      group_id: "{{ group_search.json.groups[0].id if group_search.json.groups | length > 0 else '' }}"
 
 - name: Display group existence status
   debug:
-    msg: "Group '{{ group_name }}' {{ 'exists (ID: ' + group_id + ')' if group_exists else 'does not exist' }}"
+    msg: "Group '{{ group_name }}' {{ 'exists (ID: ' + group_context.group_id + ')' if group_context.group_exists else 'does not exist' }}"
 
 - name: Create OpenStack group (if not exists)
   uri:
@@ -35,41 +36,13 @@
     status_code: 201
     return_content: yes
   register: group_create
-  when: not group_exists
+  when: not group_context.group_exists
 
 - name: Update group_id with newly created group
   set_fact:
-    group_id: "{{ group_create.json.group.id }}"
+    group_context:
+      group_id: "{{ group_create.json.group.id }}"
   when: 
-    - not group_exists
+    - not group_context.group_exists
     - group_create.json.group.id is defined
 
-
-#Questi ultimi due vanno spostati in un ruolo a parte, tipo openstack_role_assignment, che si occupa di assegnare i ruoli ai progetti, agli utenti e ai gruppi. In questo modo si mantiene il ruolo openstack_group focalizzato solo sulla gestione dei gruppi, mentre il ruolo openstack_role_assignment si occupa della gestione delle assegnazioni dei ruoli.
-#Al progetto subscription vanno assegnati i gruppi dei master e del progetto subscription, mentre al progetto subscription-dev vanno assegnati i gruppi dei master e del progetto subscription-dev. In questo modo si mantiene una chiara separazione tra i gruppi e le assegnazioni dei ruoli, facilitando la gestione e la manutenzione dell'infrastruttura OpenStack.
-
-- name: Check if group role is assigned to project
-  uri:
-    url: "{{ provider_secret.endpoint }}/projects/{{ target_project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
-    method: GET
-    headers:
-      X-Auth-Token: "{{ auth_context.provider_token }}"
-    status_code: [204, 404]
-  register: group_role_check
-  when: 
-    - grant_role | default(false)
-    - target_project_id is defined
-    - role_id is defined
-
-- name: Grant group role on project (if not already assigned)
-  uri:
-    url: "{{ provider_secret.endpoint }}/projects/{{ target_project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
-    method: PUT
-    headers:
-      X-Auth-Token: "{{ auth_context.provider_token }}"
-    status_code: 204
-  when: 
-    - grant_role | default(false)
-    - target_project_id is defined
-    - role_id is defined
-    - group_role_check.status == 404
