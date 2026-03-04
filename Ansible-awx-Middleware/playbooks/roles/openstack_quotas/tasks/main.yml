@@ -64,6 +64,10 @@
   register: cinder_quotas_current
   when: quota_checks.cinder_quotas_exists
 
+- name: Debug Cinder quota body
+  debug:
+    msg: "{{ cinder_quotas_current.json.quota_set }}"
+    
 - name: Update Cinder quotas (only if different)
   uri:
     url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
