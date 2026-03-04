@@ -7,15 +7,15 @@
 - name: Validate project scope credentials
   assert:
     that:
-      - provider_config.projectId is defined
-        or (provider_config.projectName is defined and provider_config.projectDomain is defined)
+      - provider_secret.projectId is defined
+        or (provider_secret.projectName is defined and provider_secret.projectDomain is defined)
     fail_msg: "Either projectId or projectName + projectDomain must be provided."
 
 - name: Validate user credentials
   assert:
     that:
-      - provider_config.userId is defined
-        or (provider_config.username is defined and provider_config.userDomain is defined)
+      - provider_secret.userId is defined
+        or (provider_secret.username is defined and provider_secret.userDomain is defined)
     fail_msg: "Either userId or username + userDomain must be provided."
 
 # ============================================================
@@ -24,16 +24,16 @@
 - name: Set project scope by ID
   set_fact:
     auth_project_scope:
-      id: "{{ provider_config.projectId }}"
-  when: provider_config.projectId is defined
+      id: "{{ provider_secret.projectId }}"
+  when: provider_secret.projectId is defined
 
 - name: Set project scope by name + domain
   set_fact:
     auth_project_scope:
-      name: "{{ provider_config.projectName }}"
+      name: "{{ provider_secret.projectName }}"
       domain:
-        name: "{{ provider_config.projectDomain }}"
-  when: provider_config.projectId is not defined
+        name: "{{ provider_secret.projectDomain }}"
+  when: provider_secret.projectId is not defined
 
 # ============================================================
 # BUILD USER IDENTITY
@@ -41,9 +41,9 @@
 - name: Set user credentials by userId
   set_fact:
     auth_user_identity:
-      id: "{{ provider_config.userId }}"
-      password: "{{ provider_config.password }}"
-  when: provider_config.userId is defined
+      id: "{{ provider_secret.userId }}"
+      password: "{{ provider_secret.password }}"
+  when: provider_secret.userId is defined
   no_log: true
 
 - name: Set user credentials by username + userDomain
