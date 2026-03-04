@@ -81,10 +81,6 @@
       }}
   when: quota_checks.cinder_quotas_exists
 
-- name: Debug cinder_quota_body
-  debug:
-    var: cinder_quota_body
-
 - name: Update Cinder quotas
   uri:
     url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
