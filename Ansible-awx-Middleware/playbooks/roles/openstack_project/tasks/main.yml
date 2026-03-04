@@ -44,7 +44,7 @@
     url: "{{ provider_secret.endpoint }}/projects"
     method: POST
     headers:
-      X-Auth-Token: "{{ provider_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -81,7 +81,7 @@
     url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ provider_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: [204, 404]
   register: role_check
 
@@ -90,7 +90,7 @@
     url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ provider_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 204
   when: 
     - role_check.status == 404
