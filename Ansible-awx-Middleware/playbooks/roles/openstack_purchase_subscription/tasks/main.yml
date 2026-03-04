@@ -66,8 +66,6 @@
         activation_template_id: "{{ activation_template_id }}"
         project_type: MASTER
         parent_project_id: "{{ provider_secret.projectId }}" 
-        sync_user_id: "{{ provider_secret.syncUserId }}"
-        sync_role_id: "{{ provider_secret.syncRoleId }}"
       when: is_first_subscription | bool
       
 
@@ -82,7 +80,6 @@
         name: openstack_group
       vars:
         group_name: "{{ user_id }}"
-        group_domain_id: "{{ provider_secret.groupDomainId }}"
       when: is_first_subscription | bool
 
     - name: Save MASTER group ID
@@ -136,7 +133,6 @@
         # Stessa considerazione del project: valutare ruolo dedicato al check
       vars:
         group_name: "{{ user_id }}"
-        domain_id: "{{ provider_secret.groupDomainId }}"
       when: not (is_first_subscription | bool)
 
     - name: Verify MASTER group exists (fail if not found)
@@ -173,9 +169,6 @@
         activation_template_id: "{{ activation_template_id }}"
         project_type: SUBSCRIPTION
         parent_project_id: "{{ ensure_project_result.master_project_id }}"
-        sync_user_id: "{{ provider_secret.syncUserId }}"
-        sync_role_id: "{{ provider_secret.syncRoleId }}"
-
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
@@ -187,7 +180,6 @@
         name: openstack_group
       vars:
         group_name: "{{ external_id }}"
-        group_domain_id: "{{ provider_secret.groupDomainId }}"
 
     - name: Save SUBSCRIPTION group ID
       set_fact:

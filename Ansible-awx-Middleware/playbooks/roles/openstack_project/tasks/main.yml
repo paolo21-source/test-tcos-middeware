@@ -78,7 +78,7 @@
 
 - name: Check if sync user role is assigned to project
   uri:
-    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ provider_secret.syncUserId }}/roles/{{ provider_secret.syncRoleId }}"
     method: GET
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
@@ -87,7 +87,7 @@
 
 - name: Assign sync user to project (if not already assigned)
   uri:
-    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ provider_secret.syncUserId }}/roles/{{ provider_secret.syncRoleId }}"
     method: PUT
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
