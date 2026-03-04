@@ -1,0 +1,211 @@
+# ========================================================================
+    # VALIDATION
+    # ========================================================================
+    - name: Validate required variables from providers secret
+      assert:
+        that:
+          - "'providerId' in provider_secret and provider_secret.providerId != ''"
+          - "'providerName' in provider_secret and provider_secret.providerName != ''"
+          - "'type' in provider_secret and provider_secret.type != ''"
+          - "'endpoint' in provider_secret and provider_secret.endpoint != ''"
+          - "'password' in provider_secret and provider_secret.password != ''"
+          - "'syncUserId' in provider_secret and provider_secret.syncUserId != ''"
+          - "'syncRoleId' in provider_secret and provider_secret.syncRoleId != ''"
+          - "'groupDomainId' in provider_secret and provider_secret.groupDomainId != ''"
+          - "'activeGroupRoleId' in provider_secret and provider_secret.activeGroupRoleId != ''"
+          - "'suspendedGroupRoleId' in provider_secret and provider_secret.suspendedGroupRoleId != ''"
+          - "'cancelledGroupRoleId' in provider_secret and provider_secret.cancelledGroupRoleId != ''"
+        fail_msg: "Missing required provider configuration for provider_client_tag: '{{ provider_client_tag }}'"
+
+    - name: Display operation summary
+      debug:
+        msg:
+          - "=== PURCHASE {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION ==="
+          - "User ID: {{ user_id }}"
+          - "External ID (Asset): {{ external_id }}"
+          - "Request ID: {{ request_id }}"
+          - "Is First Subscription: {{ is_first_subscription }}"
+    # Aggiungere controllo per vedere se è openstack o altro provider in base a provider_secret.type, per ora assumiamo sia sempre openstack e quindi eseguiamo autenticazione e setup specifico per OpenStack. In futuro, se si aggiungono altri provider, si potrà fare un branching in base al tipo di provider.
+    - name: Check provider type
+      assert:
+        that:
+          - provider_secret.type == "openstack"
+        fail_msg: "Unsupported provider type: '{{ provider_secret.type }}'. Only 'openstack' is supported in this playbook."
+    - name: Display provider info
+      debug:
+        msg:
+          - "Provider Name: {{ provider_secret.providerName }}"
+          - "Provider Endpoint: {{ provider_secret.endpoint }}"
+    #l'autenticazione la prende dal secret provider_client_tag che viene passato dal middleware e identifica le credenziali da usare per autenticarsi con OpenStack, quindi non serve passare altre variabili per l'autenticazione se non il provider_client_tag stesso, che però non è definito in questo playbook ma viene passato direttamente dal middleware. Quindi il ruolo openstack_auth deve essere in grado di prendere il provider_client_tag dalle variabili di ambiente o dalle variabili passate dal middleware e usarlo per autenticarsi con OpenStack.
+    # ========================================================================
+    # AUTHENTICATION
+    # provider_client_tag viene dal middleware e identifica le credenziali
+    # nella config map da usare per autenticarsi con OpenStack
+    # ========================================================================
+    - name: Authenticate with OpenStack
+      include_role:
+        name: openstack_auth
+
+    # ========================================================================
+    # STEP 1 [FIRST ONLY]: CREATE MASTER PROJECT + GROUP + ROLE GRANT + QUOTA ZERO
+    # ========================================================================
+    - name: "1) Create MASTER project"
+      include_role:
+        name: openstack_project
+      vars:
+        project_name: "{{ user_id }}"
+        project_type: MASTER
+        parent_project_id: "{{ root_project_id | default(openstack_admin_project_id) }}"
+        check_sync_user_role: true
+      when: is_first_subscription | bool
+
+    - name: Save MASTER project ID
+      set_fact:
+        master_project_id: "{{ project_id }}"
+      when: is_first_subscription | bool
+
+    - name: "2) Create MASTER group"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: false
+      when: is_first_subscription | bool
+
+    - name: Save MASTER group ID
+      set_fact:
+        master_group_id: "{{ group_id }}"
+      when: is_first_subscription | bool
+
+    - name: "3) Grant ACTIVE role to MASTER group on MASTER project"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: true
+        target_project_id: "{{ master_project_id }}"
+        role_id: "{{ active_group_role_id }}"
+      when: is_first_subscription | bool
+
+    - name: "4) Set ZERO quotas on MASTER project"
+      include_role:
+        name: openstack_quotas
+      vars:
+        target_project_id: "{{ master_project_id }}"
+        quota_profile: zero
+      when: is_first_subscription | bool
+
+    # ========================================================================
+    # STEP 1 [SUBSEQUENT ONLY]: RETRIEVE MASTER PROJECT + GROUP
+    # ========================================================================
+    - name: "1) Check if MASTER project exists and retrieve ID"
+      include_role:
+        name: openstack_project
+        # Nota: valutare se openstack_project gestisce già solo il check
+        # oppure creare un ruolo openstack_project_check dedicato
+      vars:
+        project_name: "{{ user_id }}"
+        check_sync_user_role: false
+      when: not (is_first_subscription | bool)
+
+    - name: Verify MASTER project exists (fail if not found)
+      assert:
+        that:
+          - project_id is defined
+          - project_id != ""
+        fail_msg: "ERROR: MASTER project not found for user_id {{ user_id }}. Cannot create subsequent subscription."
+      when: not (is_first_subscription | bool)
+
+    - name: Save MASTER project ID
+      set_fact:
+        master_project_id: "{{ project_id }}"
+      when: not (is_first_subscription | bool)
+
+    - name: "2) Check if MASTER group exists and retrieve ID"
+      include_role:
+        name: openstack_group
+        # Stessa considerazione del project: valutare ruolo dedicato al check
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: false
+      when: not (is_first_subscription | bool)
+
+    - name: Verify MASTER group exists (fail if not found)
+      assert:
+        that:
+          - group_id is defined
+          - group_id != ""
+        fail_msg: "ERROR: MASTER group not found for user_id {{ user_id }}. Cannot create subsequent subscription."
+      when: not (is_first_subscription | bool)
+
+    - name: Save MASTER group ID
+      set_fact:
+        master_group_id: "{{ group_id }}"
+      when: not (is_first_subscription | bool)
+
+    # ========================================================================
+    # STEP 2: SETUP SUBSCRIPTION PROJECT + GROUP + ROLE GRANTS (comune)
+    # ========================================================================
+    - name: "5) Check and create SUBSCRIPTION project"
+      include_role:
+        name: openstack_project
+      vars:
+        project_name: "{{ external_id }}"
+        project_type: SUBSCRIPTION
+        parent_project_id: "{{ master_project_id }}"
+        check_sync_user_role: true
+
+    - name: Save SUBSCRIPTION project ID
+      set_fact:
+        subscription_project_id: "{{ project_id }}"
+
+    - name: "6) Check and create SUBSCRIPTION group"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ external_id }}"
+        grant_role: false
+
+    - name: Save SUBSCRIPTION group ID
+      set_fact:
+        subscription_group_id: "{{ group_id }}"
+
+    - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ user_id }}"
+        grant_role: true
+        target_project_id: "{{ subscription_project_id }}"
+        role_id: "{{ active_group_role_id }}"
+
+    - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
+      include_role:
+        name: openstack_group
+      vars:
+        group_name: "{{ external_id }}"
+        grant_role: true
+        target_project_id: "{{ subscription_project_id }}"
+        role_id: "{{ active_group_role_id }}"
+
+    # ========================================================================
+    # STEP 3: SETUP QUOTA ON SUBSCRIPTION PROJECT (comune)
+    # ========================================================================
+    - name: "9) Update quotas on SUBSCRIPTION project"
+      include_role:
+        name: openstack_quotas
+      vars:
+        target_project_id: "{{ subscription_project_id }}"
+
+    # ========================================================================
+    # COMPLETION
+    # ========================================================================
+    - name: Display completion summary
+      debug:
+        msg:
+          - "=== {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION COMPLETED ==="
+          - "MASTER Project ID: {{ master_project_id }}"
+          - "MASTER Group ID: {{ master_group_id }}"
+          - "SUBSCRIPTION Project ID: {{ subscription_project_id }}"
+          - "SUBSCRIPTION Group ID: {{ subscription_group_id }}"
+          - "Status: Active"
