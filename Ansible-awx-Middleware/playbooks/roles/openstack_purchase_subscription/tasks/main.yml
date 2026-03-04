@@ -66,8 +66,6 @@
         activation_template_id: "{{ activation_template_id }}"
         project_type: MASTER
         parent_project_id: "{{ provider_secret.projectId }}" 
-        sync_user_id: "{{ provider_secret.syncUserId }}"
-        sync_role_id: "{{ provider_secret.syncRoleId }}"
       when: is_first_subscription | bool
       
 
@@ -89,22 +87,17 @@
         master_group_id: "{{ group_id }}"
       when: is_first_subscription | bool
 
-    - name: "3) Grant ACTIVE role to MASTER group on MASTER project"
-      include_role:
-        name: openstack_group
-      vars:
-        group_name: "{{ user_id }}"
-        grant_role: true
-        target_project_id: "{{ master_project_id }}"
-        role_id: "{{ active_group_role_id }}"
-      when: is_first_subscription | bool
 
     - name: "4) Set ZERO quotas on MASTER project"
       include_role:
         name: openstack_quotas
       vars:
         target_project_id: "{{ master_project_id }}"
-        quota_profile: zero
+        target_quota_vcpu: 0
+        target_quota_ram: 0
+        target_quota_storage: 0
+        target_quota_pub_ip: 0
+        target_quota_backup: 0
       when: is_first_subscription | bool
 
     # ========================================================================
@@ -117,7 +110,6 @@
         # oppure creare un ruolo openstack_project_check dedicato
       vars:
         project_name: "{{ user_id }}"
-        check_sync_user_role: false
       when: not (is_first_subscription | bool)
 
     - name: Verify MASTER project exists (fail if not found)
@@ -139,7 +131,7 @@
         # Stessa considerazione del project: valutare ruolo dedicato al check
       vars:
         group_name: "{{ user_id }}"
-        grant_role: false
+        domain_id: "{{ provider_secret.groupDomainId }}"
       when: not (is_first_subscription | bool)
 
     - name: Verify MASTER group exists (fail if not found)
@@ -152,7 +144,7 @@
 
     - name: Save MASTER group ID
       set_fact:
-        master_group_id: "{{ group_id }}"
+        master_group_id: "{{ group_id }}" #TODO 
       when: not (is_first_subscription | bool)
 
     # ========================================================================
@@ -163,41 +155,48 @@
         name: openstack_project
       vars:
         project_name: "{{ external_id }}"
+        project_description: "{{ 'Provider project for customer ' + user_id }}"
+        rquest_id: "{{ request_id }}"
+        product_id: "{{ product_id }}"
+        hub_id: "{{ hub_id }}" 
+        user_id: "{{ user_id }}"
+        user_email: "{{ user_email }}"
+        subscription_id: "{{ subscription_id }}"
+        external_id: "{{ external_id }}"
+        is_first_subscription: "{{ is_first_subscription }}"
+        activation_template_id: "{{ activation_template_id }}"
         project_type: SUBSCRIPTION
-        parent_project_id: "{{ master_project_id }}"
-        check_sync_user_role: true
+        parent_project_id: "{{ master_project_id }}" 
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
-        subscription_project_id: "{{ project_id }}"
+        subscription_project_id: "{{ project_id }}" # TODO 
 
     - name: "6) Check and create SUBSCRIPTION group"
       include_role:
         name: openstack_group
       vars:
         group_name: "{{ external_id }}"
-        grant_role: false
+        group_domain_id: "{{ provider_secret.groupDomainId }}"
 
     - name: Save SUBSCRIPTION group ID
       set_fact:
-        subscription_group_id: "{{ group_id }}"
+        subscription_group_id: "{{ group_id }}" # TODO
 
     - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
       include_role:
         name: openstack_group
       vars:
-        group_name: "{{ user_id }}"
-        grant_role: true
-        target_project_id: "{{ subscription_project_id }}"
+        project_id: "{{ subscription_project_id }}"
+        group_id: "{{ group_id }}"
         role_id: "{{ active_group_role_id }}"
 
     - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
       include_role:
         name: openstack_group
       vars:
-        group_name: "{{ external_id }}"
-        grant_role: true
-        target_project_id: "{{ subscription_project_id }}"
+        project_id: "{{ subscription_project_id }}"
+        group_id: "{{ subscription_group_id }}"
         role_id: "{{ active_group_role_id }}"
 
     # ========================================================================
@@ -206,8 +205,13 @@
     - name: "9) Update quotas on SUBSCRIPTION project"
       include_role:
         name: openstack_quotas
-      vars:
+      vars: 
         target_project_id: "{{ subscription_project_id }}"
+        target_quota_vcpu: "{{ quota_vcpu }}" 
+        target_quota_ram: "{{ quota_ram }}"
+        target_quota_storage: "{{ quota_storage }}"
+        target_quota_pub_ip: "{{ quota_pub_ip }}"
+        target_quota_backup: "{{ quota_backup }}"
 
     # ========================================================================
     # COMPLETION
