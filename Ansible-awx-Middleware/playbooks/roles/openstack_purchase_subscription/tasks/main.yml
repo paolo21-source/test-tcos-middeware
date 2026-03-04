@@ -177,7 +177,7 @@
 
     - name: "6) Check and create SUBSCRIPTION group"
       include_role:
-        name: openstack_project_group_role
+        name: openstack_group
       vars:
         group_name: "{{ external_id }}"
 
