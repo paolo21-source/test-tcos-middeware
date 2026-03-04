@@ -50,13 +50,6 @@
         (quota_ram | int != nova_quotas_current.json.quota_set.ram | int)
         }}"
 
-
-    
-
-- name: Display Nova quota status
-  debug:
-    msg: "Nova quotas {{ 'updated' if quota_checks.nova_needs_update else 'unchanged' }}"
-
 # ============================================================================
 # CINDER QUOTAS (Storage and Backup)
 # ============================================================================
@@ -98,10 +91,6 @@
         }}"
 
 
-- name: Display Cinder quota status
-  debug:
-    msg: "Cinder quotas {{ 'updated' if quota_checks.cinder_needs_update else 'unchanged' }}"
-  when: cinder_quotas_current is defined and not cinder_quotas_current.skipped | default(false)
 
 # ============================================================================
 # NEUTRON QUOTAS (Floating IPs)
@@ -140,9 +129,6 @@
     - quota_checks.neutron_quotas_exists
     - "{{ quota_floating_ip | int != neutron_quotas_current.json.quota.floatingip | int}}"
 
-- name: Display Neutron quota status
-  debug:
-    msg: "Neutron quotas {{ 'updated' if quota_checks.neutron_needs_update else 'unchanged' }}"
 
 - name: Display quota update summary
   debug:
