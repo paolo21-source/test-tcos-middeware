@@ -15,7 +15,8 @@
       - hub_id is defined and hub_id != ""
       - activation_template_id is defined and activation_template_id != ""
       - user_email is defined and user_email != ""
-      - is_first_subscription is defined and (is_first_subscription == true or is_first_subscription == false)
+      - is_first_subscription is defined 
+      - is_first_subscription | bool == true or is_first_subscription | bool == false
     fail_msg: "Missing required parameters for openstack_project role"
 
 - name: Check if project exists by name
