@@ -81,7 +81,8 @@
 # ============================================================
 - name: Set facts for subsequent roles
   set_fact:
-    provider_token:                   "{{ auth_response.x_subject_token }}"
+    auth_context:
+      provider_token: "{{ auth_response.x_subject_token }}"
   #   os_endpoint:                "{{ provider_secret.endpoint }}"
   #   openstack_admin_project_id: "{{ auth_response.json.token.project.id }}"
   #   sync_user_id:               "{{ provider_secret.syncUserId }}"

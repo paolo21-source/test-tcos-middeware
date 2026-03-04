@@ -24,19 +24,20 @@
     url: "{{ provider_secret.endpoint }}/projects?name={{ project_name }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ provider_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: project_search
 
 - name: Set project_exists flag
   set_fact:
-    project_exists: "{{ project_search.json.projects | length > 0 }}"
-    project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
-    
+    project_context:
+      project_exists: "{{ project_search.json.projects | length > 0 }}"
+      project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
+
 - name: Display project existence status
   debug:
-    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_id + ')' if project_exists else 'does not exist' }}"
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ')' if project_context.project_exists else 'does not exist' }}"
 
 - name: Create OpenStack project (if not exists)
   uri:
@@ -49,19 +50,19 @@
     body:
       project:
         name: "{{ project_name }}"
-        description: "{{ project_description | default('Provider project for customer ' + user_id) }}"
-        parent_id: "{{ parent_project_id | default(openstack_admin_project_id) }}"
+        description: "{{ project_description }}"
+        parent_id: "{{ parent_project_id  }}"
         enabled: true
-        requestId: "{{ request_id | default('') }}"
-        productId: "{{ product_id | default('') }}"
-        hubId: "{{ hub_id | default('') }}"
-        userId: "{{ user_id | default('') }}"
-        subscriptionId: "{{ subscription_id | default('') }}"
-        externalId: "{{ external_id | default('') }}"
-        isFirstSubscription: "{{ is_first_subscription | default('false') }}"
-        activationTemplateId: "{{ activation_template_id | default('') }}"
-        userEmail: "{{ user_email | default('') }}"
-        type: "{{ project_type | default('') }}"
+        requestId: "{{ request_id  }}"
+        productId: "{{ product_id  }}"
+        hubId: "{{ hub_id  }}"
+        userId: "{{ user_id  }}"
+        subscriptionId: "{{ subscription_id }}"
+        externalId: "{{ external_id }}"
+        isFirstSubscription: "{{ is_first_subscription }}"
+        activationTemplateId: "{{ activation_template_id }}"
+        userEmail: "{{ user_email }}"
+        type: "{{ project_type }}"
     status_code: 201
     return_content: yes
   register: project_create
@@ -69,20 +70,20 @@
 
 - name: Update project_id with newly created project
   set_fact:
-    project_id: "{{ project_create.json.project.id }}"
+    project_context:
+      project_id: "{{ project_create.json.project.id }}"
   when: 
-    - not project_exists
+    - not project_context.project_exists
     - project_create.json.project.id is defined
 
 - name: Check if sync user role is assigned to project
   uri:
-    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
     method: GET
     headers:
       X-Auth-Token: "{{ provider_token }}"
     status_code: [204, 404]
   register: role_check
-  when: check_sync_user_role | default(true)
 
 - name: Assign sync user to project (if not already assigned)
   uri:
@@ -92,5 +93,4 @@
       X-Auth-Token: "{{ provider_token }}"
     status_code: 204
   when: 
-    - check_sync_user_role | default(true)
     - role_check.status == 404

@@ -71,7 +71,8 @@
 
     - name: Save MASTER project ID
       set_fact:
-        master_project_id: "{{ project_id }}"
+        master_project_context: 
+          project_id: "{{ project_context.project_id }}"
       when: is_first_subscription | bool
 
     - name: "2) Create MASTER group"
@@ -84,7 +85,8 @@
 
     - name: Save MASTER group ID
       set_fact:
-        master_group_id: "{{ group_id }}"
+        master_project_context:
+          group_id: "{{ project_context.group_id }}"
       when: is_first_subscription | bool
 
 
@@ -92,7 +94,7 @@
       include_role:
         name: openstack_quotas
       vars:
-        target_project_id: "{{ master_project_id }}"
+        target_project_id: "{{ master_project_context.master_project_id }}"
         target_quota_vcpu: 0
         target_quota_ram: 0
         target_quota_storage: 0
@@ -122,7 +124,8 @@
 
     - name: Save MASTER project ID
       set_fact:
-        master_project_id: "{{ project_id }}"
+        master_project_context:
+          project_id: "{{ project_context.project_id }}"
       when: not (is_first_subscription | bool)
 
     - name: "2) Check if MASTER group exists and retrieve ID"
@@ -144,7 +147,8 @@
 
     - name: Save MASTER group ID
       set_fact:
-        master_group_id: "{{ group_id }}" #TODO 
+        master_project_context:
+          group_id: "{{ project_context.group_id }}" 
       when: not (is_first_subscription | bool)
 
     # ========================================================================
@@ -166,11 +170,12 @@
         is_first_subscription: "{{ is_first_subscription }}"
         activation_template_id: "{{ activation_template_id }}"
         project_type: SUBSCRIPTION
-        parent_project_id: "{{ master_project_id }}" 
+        parent_project_id: "{{ ensure_project_result.master_project_id }}" 
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
-        subscription_project_id: "{{ project_id }}" # TODO 
+        subscription_project_context:
+          project_id: "{{ project_context.project_id }}" 
 
     - name: "6) Check and create SUBSCRIPTION group"
       include_role:
@@ -181,22 +186,23 @@
 
     - name: Save SUBSCRIPTION group ID
       set_fact:
-        subscription_group_id: "{{ group_id }}" # TODO
+        subscription_group_context:
+          group_id: "{{ project_context.group_id }}" 
 
     - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
       include_role:
         name: openstack_group
       vars:
-        project_id: "{{ subscription_project_id }}"
-        group_id: "{{ group_id }}"
+        project_id: "{{ subscription_project_context.project_id }}"
+        group_id: "{{ master_project_context.group_id }}"
         role_id: "{{ active_group_role_id }}"
 
     - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
       include_role:
         name: openstack_group
       vars:
-        project_id: "{{ subscription_project_id }}"
-        group_id: "{{ subscription_group_id }}"
+        project_id: "{{ subscription_project_context.project_id }}"
+        group_id: "{{ subscription_group_context.group_id }}"
         role_id: "{{ active_group_role_id }}"
 
     # ========================================================================
@@ -220,8 +226,8 @@
       debug:
         msg:
           - "=== {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION COMPLETED ==="
-          - "MASTER Project ID: {{ master_project_id }}"
-          - "MASTER Group ID: {{ master_group_id }}"
-          - "SUBSCRIPTION Project ID: {{ subscription_project_id }}"
-          - "SUBSCRIPTION Group ID: {{ subscription_group_id }}"
+          - "MASTER Project ID: {{ master_project_context.project_id }}"
+          - "MASTER Group ID: {{ master_project_context.group_id }}"
+          - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
+          - "SUBSCRIPTION Group ID: {{ subscription_group_context.group_id }}"
           - "Status: Active"
