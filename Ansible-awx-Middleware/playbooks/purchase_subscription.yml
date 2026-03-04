@@ -82,4 +82,4 @@
         quota_storage: "{{ quota_storage }}"
         quota_pub_ip: "{{ quota_pub_ip }}"
         quota_backup: "{{ quota_backup }}"
-        provider_secret: "{{ provider_secret }}"
+        # provider_secret: "{{ provider_secret }}"
