@@ -63,7 +63,20 @@
   register: cinder_quotas_current
   when: quota_checks.cinder_quotas_exists
 
-- name: Update Cinder quotas (only if different)
+- name: Build Cinder quota body
+  set_fact:
+    cinder_quota_body:
+      quota_set:
+        gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes | int }}"
+        backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes | int }}"
+        volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
+        snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
+        groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
+        backups: "{{ cinder_quotas_current.json.quota_set.backups | int }}"
+        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int }}"
+  when: quota_checks.cinder_quotas_exists
+
+- name: Update Cinder quotas
   uri:
     url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
     method: PUT
@@ -71,21 +84,12 @@
       X-Auth-Token: "{{ auth_context.provider_token }}"
       Content-Type: "application/json"
     body_format: json
-    body:
-      quota_set:
-        gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes | int }}"
-        backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes | int }}"
-        volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
-        snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
-        groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
-        backups: "{{ cinder_quotas_current.json.quota_set.backups | int}}"
-        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int}}"
+    body: "{{ cinder_quota_body }}"
     status_code: 200
-  when: 
+  when:
     - quota_checks.cinder_quotas_exists
     - (quota_storage | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
-      (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)
-        
+      (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)        
 
 
 
