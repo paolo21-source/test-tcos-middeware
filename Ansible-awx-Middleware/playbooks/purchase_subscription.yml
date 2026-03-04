@@ -39,7 +39,9 @@
           - "External ID (Asset): {{ external_id }}"
           - "Request ID: {{ request_id }}"
           - "Is First Subscription: {{ is_first_subscription }}"
-
+    - name: Debug all vars
+      debug:
+        msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
     - name: Parse providers config map
       set_fact:
         secret_yaml: "{{ credentials_yaml | from_yaml }}"
