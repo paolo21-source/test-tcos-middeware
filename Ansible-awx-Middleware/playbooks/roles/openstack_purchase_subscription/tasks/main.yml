@@ -66,6 +66,8 @@
         activation_template_id: "{{ activation_template_id }}"
         project_type: MASTER
         parent_project_id: "{{ provider_secret.projectId }}" 
+        sync_user_id: "{{ provider_secret.syncUserId }}"
+        sync_role_id: "{{ provider_secret.syncRoleId }}"
       when: is_first_subscription | bool
       
 
@@ -170,7 +172,10 @@
         is_first_subscription: "{{ is_first_subscription }}"
         activation_template_id: "{{ activation_template_id }}"
         project_type: SUBSCRIPTION
-        parent_project_id: "{{ ensure_project_result.master_project_id }}" 
+        parent_project_id: "{{ ensure_project_result.master_project_id }}"
+        sync_user_id: "{{ provider_secret.syncUserId }}"
+        sync_role_id: "{{ provider_secret.syncRoleId }}"
+
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
