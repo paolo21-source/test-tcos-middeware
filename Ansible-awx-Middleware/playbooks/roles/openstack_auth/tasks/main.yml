@@ -44,7 +44,7 @@
       id: "{{ provider_secret.userId }}"
       password: "{{ provider_secret.password }}"
   when: provider_secret.userId is defined
-  no_log: true
+  no_log: false
 
 - name: Set user credentials by username + userDomain
   set_fact:
@@ -54,7 +54,7 @@
       domain:
         name: "{{ provider_config.userDomain }}"
   when: provider_config.userId is not defined
-  no_log: true
+  no_log: false
 
 # ============================================================
 # AUTHENTICATE
