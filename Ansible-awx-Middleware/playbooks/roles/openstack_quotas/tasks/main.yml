@@ -105,7 +105,7 @@
 # ============================================================================
 - name: Get current Neutron quotas
   uri:
-    url: "{{ auth_context.neutron_endpoint }}/quotas/{{ project_id }}"
+    url: "{{ auth_context.neutron_endpoint }}/v2.0/quotas/{{ project_id }}"
     method: GET
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
@@ -116,7 +116,7 @@
 
 - name: Update Neutron quotas (only if different)
   uri:
-    url: "{{ auth_context.neutron_endpoint }}/quotas/{{ project_id }}"
+    url: "{{ auth_context.neutron_endpoint }}/v2.0/quotas/{{ project_id }}"
     method: PUT
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
