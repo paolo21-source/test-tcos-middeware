@@ -45,10 +45,10 @@
     status_code: 200
   when: 
     - quota_checks.nova_quotas_exists
-    - "
+    - 
         (quota_vcpu | int != nova_quotas_current.json.quota_set.cores | int) or
         (quota_ram | int != nova_quotas_current.json.quota_set.ram | int)
-        "
+        
 
 # ============================================================================
 # CINDER QUOTAS (Storage and Backup)
@@ -74,7 +74,6 @@
     body_format: json
     body:
       quota_set:
-        id: "{{ cinder_quotas_current.json.quota_set.id }}"
         gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes }}"
         backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes }}"
         volumes: "{{ cinder_quotas_current.json.quota_set.volumes }}"
