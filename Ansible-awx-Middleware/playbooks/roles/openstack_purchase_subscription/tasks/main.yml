@@ -54,10 +54,22 @@
         name: openstack_project
       vars:
         project_name: "{{ user_id }}"
+        project_description: "{{ 'Provider project for customer ' + user_id }}"
+        rquest_id: "{{ request_id }}"
+        product_id: "{{ product_id }}"
+        hub_id: "{{ hub_id }}" 
+        user_id: "{{ user_id }}"
+        user_email: "{{ user_email }}"
+        subscription_id: "{{ subscription_id }}"
+        external_id: "{{ external_id }}"
+        is_first_subscription: "{{ is_first_subscription }}"
+        activation_template_id: "{{ activation_template_id }}"
         project_type: MASTER
-        parent_project_id: "{{ root_project_id | default(openstack_admin_project_id) }}"
-        check_sync_user_role: true
+        parent_project_id: "{{ provider_secret.projectId }}" 
+        sync_user_id: "{{ provider_secret.syncUserId }}"
+        sync_role_id: "{{ provider_secret.syncRoleId }}"
       when: is_first_subscription | bool
+      
 
     - name: Save MASTER project ID
       set_fact:
@@ -69,7 +81,7 @@
         name: openstack_group
       vars:
         group_name: "{{ user_id }}"
-        grant_role: false
+        group_domain_id: "{{ provider_secret.groupDomainId }}"
       when: is_first_subscription | bool
 
     - name: Save MASTER group ID
