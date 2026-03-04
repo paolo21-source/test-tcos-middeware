@@ -18,7 +18,18 @@
     - name: Debug providers config
       debug:
         var: providers_secret
-
+    - name: Set provider variables
+      set_fact:
+        openstack_endpoint:          "{{ provider_config.endpoint }}"
+        openstack_user_id:           "{{ provider_config.userId }}"
+        openstack_password:          "{{ provider_config.password }}"
+        openstack_project_id:        "{{ provider_config.projectId }}"
+        openstack_sync_user_id:      "{{ provider_config.syncUserId }}"
+        openstack_sync_role_id:      "{{ provider_config.syncRoleId }}"
+        openstack_group_domain_id:   "{{ provider_config.groupDomainId }}"
+        active_group_role_id:        "{{ provider_config.activeGroupRoleId }}"
+        suspended_group_role_id:     "{{ provider_config.suspendedGroupRoleId }}"
+        cancelled_group_role_id:     "{{ provider_config.cancelledGroupRoleId }}"
     # ========================================================================
     # VALIDATION
     # ========================================================================
