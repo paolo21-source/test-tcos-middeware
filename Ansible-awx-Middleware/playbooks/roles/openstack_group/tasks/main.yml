@@ -1,5 +1,6 @@
 ---
 # roles/openstack_group/tasks/main.yml
+# METTERE GROUP NON COME ROLES MA COME TASKS ALL'INTERNO DI OPENSTACK_PURCHASE_SUBSCRIPTION
 
 - name: Check if group exists by name and domain
   uri:
