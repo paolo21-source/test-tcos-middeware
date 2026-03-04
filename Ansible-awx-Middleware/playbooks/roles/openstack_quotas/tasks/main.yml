@@ -1,7 +1,7 @@
 ---
 # roles/openstack_quotas/tasks/main.yml
 - name: Validate quotas 
-  set_facts:
+  set_fact:
     quota_checks:
       nova_quotas_exists: "{{ (quota_vcpu is defined and quota_vcpu | int) or (quota_ram is defined and quota_ram | int) }}"
       cinder_quotas_exists: "{{ quota_storage is defined and quota_storage | int or quota_backup is defined and quota_backup | int }}"
