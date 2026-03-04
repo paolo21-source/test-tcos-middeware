@@ -76,18 +76,17 @@
   register: auth_response
   no_log: false
 
-# # ============================================================
-# # SET FACTS - disponibili per tutti i ruoli successivi
-# # ============================================================
-# - name: Set facts for subsequent roles
-#   set_fact:
-#     os_token:                   "{{ auth_response.x_subject_token }}"
-#     os_endpoint:                "{{ provider_secret.endpoint }}"
-#     openstack_admin_project_id: "{{ auth_response.json.token.project.id }}"
-#     sync_user_id:               "{{ provider_secret.syncUserId }}"
-#     sync_role_id:               "{{ provider_secret.syncRoleId }}"
-#     group_domain_id:            "{{ provider_secret.groupDomainId }}"
-#     active_group_role_id:       "{{ provider_secret.activeGroupRoleId }}"
-#     suspended_group_role_id:    "{{ provider_secret.suspendedGroupRoleId }}"
-#     cancelled_group_role_id:    "{{ provider_secret.cancelledGroupRoleId }}"
-#   no_log: true
+# ============================================================
+# SET FACTS - disponibili per tutti i ruoli successivi
+# ============================================================
+- name: Set facts for subsequent roles
+  set_fact:
+    provider_token:                   "{{ auth_response.x_subject_token }}"
+  #   os_endpoint:                "{{ provider_secret.endpoint }}"
+  #   openstack_admin_project_id: "{{ auth_response.json.token.project.id }}"
+  #   sync_user_id:               "{{ provider_secret.syncUserId }}"
+  #   sync_role_id:               "{{ provider_secret.syncRoleId }}"
+  #   group_domain_id:            "{{ provider_secret.groupDomainId }}"
+  #   active_group_role_id:       "{{ provider_secret.activeGroupRoleId }}"
+  #   suspended_group_role_id:    "{{ provider_secret.suspendedGroupRoleId }}"
+  #   cancelled_group_role_id:    "{{ provider_secret.cancelledGroupRoleId }}"
