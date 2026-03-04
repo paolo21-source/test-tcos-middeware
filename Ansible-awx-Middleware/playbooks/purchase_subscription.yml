@@ -20,7 +20,7 @@
       assert:
         that:
           - provider_client_tag is defined and provider_client_tag != ""
-          - external_id is defined and external_id != """
+          - external_id is defined and external_id != ""
           - request_id is defined and request_id != ""
           - product_id is defined and product_id != ""
           - hub_id is defined and hub_id != ""
