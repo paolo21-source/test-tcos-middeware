@@ -9,7 +9,15 @@
   hosts: localhost
   gather_facts: false
 
+
+
   tasks:
+    - name: Parse providers config map
+      set_fact:
+        providers_secret: "{{ providers_secret | from_yaml }}"
+    - name: Debug providers config
+      debug:
+        var: providers_secret
 
     # ========================================================================
     # VALIDATION

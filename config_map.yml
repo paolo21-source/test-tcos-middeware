@@ -1,0 +1,31 @@
+openstackMilano1:
+    providerId: 42
+    providerName: region-milano.linuxwall.it
+    type: openstack
+    endpoint: https://region-milano.linuxwall.it:5000/v3
+    userId: 8047a64bf9be44cb8171e5d6448b3ab6
+    password: "4[A:nn371R^D'A5"
+    projectId: fd2f0bf534504696a8fb62ca84f4e191
+    syncUserId: 8047a64bf9be44cb8171e5d6448b3ab6
+    syncRoleId: 82542893f28641979eef17a31d968634
+    groupDomainId: 9c7a1c2ef54e4a80877407c46a2c13eb
+    activeGroupRoleId: 82542893f28641979eef17a31d968634
+    suspendedGroupRoleId: aa601f17bff44a64a452b4ee00454d1a
+    cancelledGroupRoleId: aa601f17bff44a64a452b4ee00454d1a 
+
+
+openstackRoma1:
+    providerId: <providerId>
+    providerName: region-roma.linuxwall.it
+    properties:
+    type: openstack
+    endpoint: https://region-roma.linuxwall.it:5000/v3
+    userId: <userId> 
+    password: <pass>
+    projectId: <projectId> 
+    syncUserId: <syncUserId>
+    syncRoleId: <syncRoleId> 
+    groupDomainId: <groupDomainId>
+    activeGroupRoleId: <activeGroupRole>
+    suspendedGroupRoleId: <suspendedGroupRole> 
+    cancelledGroupRoleId: <cancelledGroupRole>

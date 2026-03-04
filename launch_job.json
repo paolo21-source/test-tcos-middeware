@@ -1,5 +1,24 @@
 curl -k -v -X POST \
-  https://urlawx/api/v2/job_templates/jobid/launch/ \
+  https://services.linuxwall.it/api/v2/job_templates/76/launch/ \
   -H "Content-Type: application/json" \
-  -u "username:password" \
-  -d '{}'
+  -u "user.staging:qunhah-gytjA4-qutmih" \
+  -d '{
+    "extra_vars": {
+        "provider_client_tag": "openstackMilano1",
+        "external_id": "SA-000000",
+        "request_id": "PR-0000-0000-0000",
+        "product_id": "PRD-000-000-000",
+        "hub_id": "HB-0000-0000",
+        "user_id": "TA-0000-0000-0000",
+        "user_email": "user@email.it",
+        "subscription_id": "AS-0000-0000-0000",
+        "is_first_subscription": "true",
+        "activation_template_id": "TL-000-000-000",
+        "quota_vcpu": "1",
+        "quota_ram": "2",
+        "quota_storage": "3",
+        "quota_pub_ip": "4",
+        "quota_backup": "5"
+    }
+
+  }'
