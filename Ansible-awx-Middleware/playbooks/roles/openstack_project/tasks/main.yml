@@ -21,10 +21,10 @@
 
 - name: Check if project exists by name
   uri:
-    url: "{{ openstack_auth_url }}/projects?name={{ project_name }}"
+    url: "{{ provider_secret.endpoint }}/projects?name={{ project_name }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ provider_token }}"
     status_code: 200
     return_content: yes
   register: project_search
@@ -33,17 +33,17 @@
   set_fact:
     project_exists: "{{ project_search.json.projects | length > 0 }}"
     project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
-
+    
 - name: Display project existence status
   debug:
     msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_id + ')' if project_exists else 'does not exist' }}"
 
 - name: Create OpenStack project (if not exists)
   uri:
-    url: "{{ openstack_auth_url }}/projects"
+    url: "{{ provider_secret.endpoint }}/projects"
     method: POST
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ provider_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -76,20 +76,20 @@
 
 - name: Check if sync user role is assigned to project
   uri:
-    url: "{{ openstack_auth_url }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ provider_token }}"
     status_code: [204, 404]
   register: role_check
   when: check_sync_user_role | default(true)
 
 - name: Assign sync user to project (if not already assigned)
   uri:
-    url: "{{ openstack_auth_url }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/users/{{ sync_user_id }}/roles/{{ sync_role_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ provider_token }}"
     status_code: 204
   when: 
     - check_sync_user_role | default(true)

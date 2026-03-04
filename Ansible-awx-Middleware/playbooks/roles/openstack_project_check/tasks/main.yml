@@ -5,7 +5,7 @@
 
 - name: Check if project exists by name
   uri:
-    url: "{{ openstack_auth_url }}/projects?name={{ project_name }}"
+    url: "{{ provider_secret.endpoint }}/projects?name={{ project_name }}"
     method: GET
     headers:
       X-Auth-Token: "{{ os_token }}"
