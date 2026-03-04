@@ -1,22 +1,5 @@
 # roles/openstack_auth/tasks/main.yml
 ---
-- name: Validate provider_client_tag
-  assert:
-    that:
-      - provider_client_tag is defined and provider_client_tag != ""
-    fail_msg: "provider_client_tag is required"
-
-# ============================================================
-# LEGGI LA MAPPA E PRENDI L'ENTRY DEL PROVIDER
-# ============================================================
-- name: Get provider config from map
-  set_fact:
-    provider_config: "{{ providers_config_map[provider_client_tag] }}"
-
-- name: Fail if provider tag not found in config map
-  fail:
-    msg: "Nessuna entry trovata nella config map per provider_client_tag: '{{ provider_client_tag }}'"
-  when: provider_config is not defined or provider_config == ""
 
 # ============================================================
 # VALIDATE
