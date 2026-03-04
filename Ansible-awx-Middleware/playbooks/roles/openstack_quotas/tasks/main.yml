@@ -64,15 +64,18 @@
   register: cinder_quotas_current
   when: quota_checks.cinder_quotas_exists
 
-- name: Debug 
+- name: Debug Cinder PUT body
   debug:
-    msg: 
-      - "quota_storage passato:    {{ quota_storage | default('NON DEFINITO') }}"
-      - "quota_backup passato:     {{ quota_backup | default('NON DEFINITO') }}"
-      - "gigabytes attuale:        {{ cinder_quotas_current.json.quota_set.gigabytes }}"
-      - "backup_gigabytes attuale: {{ cinder_quotas_current.json.quota_set.backup_gigabytes }}"
-      - "cinder_quotas_exists:     {{ quota_checks.cinder_quotas_exists }}"
-
+    msg:
+      quota_set:
+        gigabytes: "{{ quota_storage | int }}"
+        backup_gigabytes: "{{ quota_backup | int }}"
+        volumes: "{{ cinder_quotas_current.json.quota_set.volumes | int }}"
+        snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots | int }}"
+        groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
+        backups: "{{ cinder_quotas_current.json.quota_set.backups | int }}"
+        per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int }}"
+        
 - name: Update Cinder quotas (only if different)
   uri:
     url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
