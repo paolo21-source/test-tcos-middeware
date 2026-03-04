@@ -20,7 +20,13 @@
     return_content: yes
   register: nova_quotas_current
   when: quota_checks.nova_quotas_exists
-
+  
+- name: Debug Nova PUT body
+  debug:
+    msg:
+      quota_set:
+        cores: "{{ quota_vcpu | int if quota_vcpu is defined else nova_quotas_current.json.quota_set.cores }}"
+        ram: "{{ quota_ram | int if quota_ram is defined else nova_quotas_current.json.quota_set.ram }}"
 - name: Update Nova quotas (only if different)
   uri:
     url: "{{ auth_context.nova_endpoint }}/os-quota-sets/{{ project_id }}"
@@ -45,9 +51,8 @@
     status_code: 200
   when: 
     - quota_checks.nova_quotas_exists
-    - 
-        (quota_vcpu | int != nova_quotas_current.json.quota_set.cores | int) or
-        (quota_ram | int != nova_quotas_current.json.quota_set.ram | int)
+    - (quota_vcpu | int != nova_quotas_current.json.quota_set.cores | int) or
+      (quota_ram | int != nova_quotas_current.json.quota_set.ram | int)
         
 
 # ============================================================================
@@ -75,7 +80,7 @@
         groups: "{{ cinder_quotas_current.json.quota_set.groups | int }}"
         backups: "{{ cinder_quotas_current.json.quota_set.backups | int }}"
         per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes | int }}"
-        
+
 - name: Update Cinder quotas (only if different)
   uri:
     url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
@@ -96,9 +101,8 @@
     status_code: 200
   when: 
     - quota_checks.cinder_quotas_exists
-    - 
-        (quota_storage | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
-        (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)
+    - (quota_storage | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
+      (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)
         
 
 
