@@ -86,3 +86,9 @@
       nova_endpoint: "{{ auth_response.json.token.catalog | selectattr('type','equalto','compute') | map(attribute='endpoints') | flatten | selectattr('interface','equalto','public') | map(attribute='url') | first }}"
       cinder_endpoint: "{{ auth_response.json.token.catalog | selectattr('type','equalto','volumev3') | map(attribute='endpoints') | flatten | selectattr('interface','equalto','public') | map(attribute='url') | first }}"
       neutron_endpoint: "{{ auth_response.json.token.catalog | selectattr('type','equalto','network') | map(attribute='endpoints') | flatten | selectattr('interface','equalto','public') | map(attribute='url') | first }}"
+- name: Debug auth endpoints
+  debug:
+    msg: 
+      - "Nova Endpoint: {{ auth_context.nova_endpoint }}"
+      - "Cinder Endpoint: {{ auth_context.cinder_endpoint }}"
+      - "Neutron Endpoint: {{ auth_context.neutron_endpoint }}"
