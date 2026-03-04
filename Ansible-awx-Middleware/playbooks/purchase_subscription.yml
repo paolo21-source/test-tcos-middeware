@@ -12,41 +12,70 @@
 
 
   tasks:
-    - name: Parse providers config map
-      set_fact:
-        providers_secret: "{{ providers_secret | from_yaml }}"
-    - name: Debug providers config
-      debug:
-        var: providers_secret
-    - name: Set provider variables
-      set_fact:
-        openstack_endpoint:          "{{ provider_config.endpoint }}"
-        openstack_user_id:           "{{ provider_config.userId }}"
-        openstack_password:          "{{ provider_config.password }}"
-        openstack_project_id:        "{{ provider_config.projectId }}"
-        openstack_sync_user_id:      "{{ provider_config.syncUserId }}"
-        openstack_sync_role_id:      "{{ provider_config.syncRoleId }}"
-        openstack_group_domain_id:   "{{ provider_config.groupDomainId }}"
-        active_group_role_id:        "{{ provider_config.activeGroupRoleId }}"
-        suspended_group_role_id:     "{{ provider_config.suspendedGroupRoleId }}"
-        cancelled_group_role_id:     "{{ provider_config.cancelledGroupRoleId }}"
+
     # ========================================================================
     # VALIDATION
     # ========================================================================
     - name: Validate required variables
       assert:
         that:
-          - user_id is defined and user_id != ""
-          - external_id is defined and external_id != ""
-          - request_id is defined
-          - parent_project_id is defined and parent_project_id != ""
-          - subscription_id is defined and subscription_id != ""
+          - provider_client_tag is defined and provider_client_tag != ""
+          - external_id is defined and external_id != """
+          - request_id is defined and request_id != ""
           - product_id is defined and product_id != ""
           - hub_id is defined and hub_id != ""
-          - activation_template_id is defined and activation_template_id != ""
+          - user_id is defined and user_id != ""
           - user_email is defined and user_email != ""
+          - subscription_id is defined and subscription_id != ""
           - is_first_subscription is defined and (is_first_subscription == true or is_first_subscription == false)
+          - activation_template_id is defined and activation_template_id != ""
         fail_msg: "Missing required variables: user_id, external_id, request_id, is_first_subscription"
+
+    - name: Display operation summary
+      debug:
+        msg:
+          - "=== PURCHASE {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION ==="
+          - "User ID: {{ user_id }}"
+          - "External ID (Asset): {{ external_id }}"
+          - "Request ID: {{ request_id }}"
+          - "Is First Subscription: {{ is_first_subscription }}"
+
+    - name: Parse providers config map
+      set_fact:
+        providers_secret: "{{ providers_secret | from_yaml }}"
+    - name: Debug providers config
+      debug:
+        var: providers_secret
+    - name: Fail if provider tag not found
+      fail:
+        msg: "Nessuna entry per provider_client_tag: '{{ provider_client_tag }}'"
+      when: provider_client_tag not in providers_secret
+
+    - name: Get provider config
+      set_fact:
+        provider_secret: "{{ providers_secret[provider_client_tag] }}"
+    
+
+    # ========================================================================
+    # VALIDATION
+    # ========================================================================
+    - name: Validate required variables from providers secret
+      assert:
+        that:
+          - providerId in provider_secret and provider_secret.providerId != ""
+          - providerName in provider_secret and provider_secret.providerName != ""
+          - type in provider_secret and provider_secret.type != ""
+          - endpoint in provider_secret and provider_secret.endpoint != ""
+          - userId in provider_secret and provider_secret.userId != ""
+          - password in provider_secret and provider_secret.password != ""
+          - projectId in provider_secret and provider_secret.projectId != ""
+          - syncUserId in provider_secret and provider_secret.syncUserId != ""
+          - syncRoleId in provider_secret and provider_secret.syncRoleId != ""
+          - groupDomainId in provider_secret and provider_secret.groupDomainId != ""
+          - activeGroupRoleId in provider_secret and provider_secret.activeGroupRoleId != ""
+          - suspendedGroupRoleId in provider_secret and provider_secret.suspendedGroupRoleId != ""
+          - cancelledGroupRoleId in provider_secret and provider_secret.cancelledGroupRoleId != ""
+        fail_msg: "Missing required provider configuration for provider_client_tag: '{{ provider_client_tag }}'"
 
     - name: Display operation summary
       debug:
