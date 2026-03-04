@@ -96,7 +96,9 @@
     - (quota_storage | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
       (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)        
 
-
+- name: Debug neutron endpoint
+  debug:
+    msg: "{{ auth_context.neutron_endpoint }}"
 
 # ============================================================================
 # NEUTRON QUOTAS (Floating IPs)
@@ -111,10 +113,6 @@
     return_content: yes
   register: neutron_quotas_current
   when: quota_checks.neutron_quotas_exists
-  
-- name: Debug neutron endpoint
-  debug:
-    msg: "{{ auth_context.neutron_endpoint }}"
 
 - name: Update Neutron quotas (only if different)
   uri:
