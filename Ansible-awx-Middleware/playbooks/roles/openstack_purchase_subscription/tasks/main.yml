@@ -93,12 +93,12 @@
       include_role:
         name: openstack_quotas
       vars:
-        target_project_id: "{{ master_project_context.master_project_id }}"
-        target_quota_vcpu: 0
-        target_quota_ram: 0
-        target_quota_storage: 0
-        target_quota_pub_ip: 0
-        target_quota_backup: 0
+        project_id: "{{ master_project_context.master_project_id }}"
+        quota_vcpu: 0
+        quota_ram: 0
+        quota_storage: 0
+        quota_floating_ip: 0
+        quota_backup: 0
       when: is_first_subscription | bool
 
     # ========================================================================
@@ -209,12 +209,12 @@
       include_role:
         name: openstack_quotas
       vars: 
-        target_project_id: "{{ subscription_project_id }}"
-        target_quota_vcpu: "{{ quota_vcpu }}" 
-        target_quota_ram: "{{ quota_ram }}"
-        target_quota_storage: "{{ quota_storage }}"
-        target_quota_pub_ip: "{{ quota_pub_ip }}"
-        target_quota_backup: "{{ quota_backup }}"
+        project_id: "{{ subscription_project_id }}"
+        quota_vcpu: "{{ quota_vcpu }}" 
+        quota_ram: "{{ quota_ram }}"
+        quota_storage: "{{ quota_storage }}"
+        quota_floating_ip: "{{ quota_floating_ip }}"
+        quota_backup: "{{ quota_backup }}"
 
     # ========================================================================
     # COMPLETION

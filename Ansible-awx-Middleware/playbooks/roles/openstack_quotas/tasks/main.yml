@@ -1,40 +1,47 @@
 ---
 # roles/openstack_quotas/tasks/main.yml
-
+- name: Validate quotas 
+  set_facts:
+    quota_checks:
+      nova_quotas_exists: "{{ (quota_vcpu is defined and quota_vcpu | int) or (quota_ram is defined and quota_ram | int) }}"
+      cinder_quotas_exists: "{{ quota_storage is defined and quota_storage | int or quota_backup is defined and quota_backup | int }}"
+      neutron_quotas_exists: "{{ quota_floating_ip is defined and quota_floating_ip | int }}"
+    
 # ============================================================================
 # NOVA QUOTAS (CPU and RAM)
 # ============================================================================
 - name: Get current Nova quotas
   uri:
-    url: "{{ nova_endpoint }}/os-quota-sets/{{ target_project_id }}"
+    url: "{{ auth_context.nova_endpoint }}/os-quota-sets/{{ project_id }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: nova_quotas_current
-  when: quota_vcpu is defined or quota_ram_mb is defined
+  when: quota_checks.nova_quotas_exists
 
 - name: Check if Nova quotas need update
   set_fact:
-    nova_needs_update: "{{
-      (quota_vcpu is defined and quota_vcpu | int != nova_quotas_current.json.quota_set.cores | int) or
-      (quota_ram_mb is defined and quota_ram_mb | int != nova_quotas_current.json.quota_set.ram | int)
-      }}"
-  when: nova_quotas_current is defined and not nova_quotas_current.skipped | default(false)
+    quota_checks:
+      nova_needs_update: "{{
+        (quota_vcpu | int != nova_quotas_current.json.quota_set.cores | int) or
+        (quota_ram | int != nova_quotas_current.json.quota_set.ram | int)
+        }}"
+  when: quota_checks.nova_quotas_exists 
 
 - name: Update Nova quotas (only if different)
   uri:
-    url: "{{ nova_endpoint }}/os-quota-sets/{{ target_project_id }}"
+    url: "{{ auth_context.nova_endpoint }}/os-quota-sets/{{ project_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
       quota_set:
         cores: "{{ quota_vcpu | int if quota_vcpu is defined else nova_quotas_current.json.quota_set.cores }}"
-        ram: "{{ quota_ram_mb | int if quota_ram_mb is defined else nova_quotas_current.json.quota_set.ram }}"
+        ram: "{{ quota_ram | int if quota_ram is defined else nova_quotas_current.json.quota_set.ram }}"
         instances: "{{ nova_quotas_current.json.quota_set.instances }}"
         floating_ips: "{{ nova_quotas_current.json.quota_set.floating_ips }}"
         metadata_items: "{{ nova_quotas_current.json.quota_set.metadata_items }}"
@@ -46,50 +53,49 @@
         injected_file_content_bytes: "{{ nova_quotas_current.json.quota_set.injected_file_content_bytes }}"
     status_code: 200
   when: 
-    - nova_quotas_current is defined 
-    - not nova_quotas_current.skipped | default(false)
-    - nova_needs_update | default(false)
+    - quota_checks.nova_quotas_exists
+    - quota_checks.nova_needs_update 
+    
 
 - name: Display Nova quota status
   debug:
-    msg: "Nova quotas {{ 'updated' if nova_needs_update | default(false) else 'unchanged' }}"
-  when: nova_quotas_current is defined and not nova_quotas_current.skipped | default(false)
+    msg: "Nova quotas {{ 'updated' if quota_checks.nova_needs_update else 'unchanged' }}"
 
 # ============================================================================
 # CINDER QUOTAS (Storage and Backup)
 # ============================================================================
 - name: Get current Cinder quotas
   uri:
-    url: "{{ cinder_endpoint }}/os-quota-sets/{{ target_project_id }}"
+    url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: cinder_quotas_current
-  when: quota_storage_gb is defined or quota_backup_gb is defined
+  when: quota_checks.cinder_quotas_exists
 
 - name: Check if Cinder quotas need update
   set_fact:
     cinder_needs_update: "{{
-      (quota_storage_gb is defined and quota_storage_gb | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
-      (quota_backup_gb is defined and quota_backup_gb | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)
+      (quota_storage | int != cinder_quotas_current.json.quota_set.gigabytes | int) or
+      (quota_backup | int != cinder_quotas_current.json.quota_set.backup_gigabytes | int)
       }}"
-  when: cinder_quotas_current is defined and not cinder_quotas_current.skipped | default(false)
+  when: quota_checks.cinder_quotas_exists
 
 - name: Update Cinder quotas (only if different)
   uri:
-    url: "{{ cinder_endpoint }}/os-quota-sets/{{ target_project_id }}"
+    url: "{{ auth_context.cinder_endpoint }}/os-quota-sets/{{ project_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
       quota_set:
         id: "{{ cinder_quotas_current.json.quota_set.id }}"
-        gigabytes: "{{ quota_storage_gb | int if quota_storage_gb is defined else cinder_quotas_current.json.quota_set.gigabytes }}"
-        backup_gigabytes: "{{ quota_backup_gb | int if quota_backup_gb is defined else cinder_quotas_current.json.quota_set.backup_gigabytes }}"
+        gigabytes: "{{ quota_storage | int if quota_storage is defined else cinder_quotas_current.json.quota_set.gigabytes }}"
+        backup_gigabytes: "{{ quota_backup | int if quota_backup is defined else cinder_quotas_current.json.quota_set.backup_gigabytes }}"
         volumes: "{{ cinder_quotas_current.json.quota_set.volumes }}"
         snapshots: "{{ cinder_quotas_current.json.quota_set.snapshots }}"
         groups: "{{ cinder_quotas_current.json.quota_set.groups }}"
@@ -97,13 +103,13 @@
         per_volume_gigabytes: "{{ cinder_quotas_current.json.quota_set.per_volume_gigabytes }}"
     status_code: 200
   when: 
-    - cinder_quotas_current is defined
-    - not cinder_quotas_current.skipped | default(false)
-    - cinder_needs_update | default(false)
+    - quota_checks.cinder_quotas_exists
+    - quota_checks.cinder_needs_update 
+
 
 - name: Display Cinder quota status
   debug:
-    msg: "Cinder quotas {{ 'updated' if cinder_needs_update | default(false) else 'unchanged' }}"
+    msg: "Cinder quotas {{ 'updated' if quota_checks.cinder_needs_update else 'unchanged' }}"
   when: cinder_quotas_current is defined and not cinder_quotas_current.skipped | default(false)
 
 # ============================================================================
@@ -111,27 +117,27 @@
 # ============================================================================
 - name: Get current Neutron quotas
   uri:
-    url: "{{ neutron_endpoint }}/quotas/{{ target_project_id }}"
+    url: "{{ auth_context.neutron_endpoint }}/quotas/{{ project_id }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: neutron_quotas_current
-  when: quota_floating_ip is defined
+  when: quota_checks.neutron_quotas_exists
 
 - name: Check if Neutron quotas need update
   set_fact:
     neutron_needs_update: "{{
-      quota_floating_ip is defined and quota_floating_ip | int != neutron_quotas_current.json.quota.floatingip | int}}"
-  when: neutron_quotas_current is defined and not neutron_quotas_current.skipped | default(false)
+      quota_floating_ip | int != neutron_quotas_current.json.quota.floatingip | int}}"
+  when: quota_checks.neutron_quotas_exists
 
 - name: Update Neutron quotas (only if different)
   uri:
-    url: "{{ neutron_endpoint }}/quotas/{{ target_project_id }}"
+    url: "{{ auth_context.neutron_endpoint }}/quotas/{{ project_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -145,21 +151,19 @@
         security_group_rule: "{{ neutron_quotas_current.json.quota.security_group_rule }}"
     status_code: 200
   when: 
-    - neutron_quotas_current is defined
-    - not neutron_quotas_current.skipped | default(false)
-    - neutron_needs_update | default(false)
+    - quota_checks.neutron_quotas_exists
+    - quota_checks.neutron_needs_update
 
 - name: Display Neutron quota status
   debug:
-    msg: "Neutron quotas {{ 'updated' if neutron_needs_update | default(false) else 'unchanged' }}"
-  when: neutron_quotas_current is defined and not neutron_quotas_current.skipped | default(false)
+    msg: "Neutron quotas {{ 'updated' if quota_checks.neutron_needs_update else 'unchanged' }}"
 
 - name: Display quota update summary
   debug:
     msg:
       - "=== Quota Update Summary ==="
-      - "vCPU: {{ 'updated to ' + (quota_vcpu | string) if (nova_needs_update | default(false) and quota_vcpu is defined) else 'unchanged' }}"
-      - "RAM (MB): {{ 'updated to ' + (quota_ram_mb | string) if (nova_needs_update | default(false) and quota_ram_mb is defined) else 'unchanged' }}"
-      - "Storage (GB): {{ 'updated to ' + (quota_storage_gb | string) if (cinder_needs_update | default(false) and quota_storage_gb is defined) else 'unchanged' }}"
-      - "Backup (GB): {{ 'updated to ' + (quota_backup_gb | string) if (cinder_needs_update | default(false) and quota_backup_gb is defined) else 'unchanged' }}"
-      - "Floating IPs: {{ 'updated to ' + (quota_floating_ip | string) if (neutron_needs_update | default(false) and quota_floating_ip is defined) else 'unchanged' }}"
+      - "vCPU: {{ 'updated to ' + (quota_vcpu | string) if (quota_checks.nova_needs_update | default(false) and quota_vcpu is defined) else 'unchanged' }}"
+      - "RAM (MB): {{ 'updated to ' + (quota_ram | string) if (quota_checks.nova_needs_update | default(false) and quota_ram is defined) else 'unchanged' }}"
+      - "Storage (GB): {{ 'updated to ' + (quota_storage| string) if (quota_checks.cinder_needs_update | default(false) and quota_storage is defined) else 'unchanged' }}"
+      - "Backup (GB): {{ 'updated to ' + (quota_backup | string) if (quota_checks.cinder_needs_update | default(false) and quota_backup is defined) else 'unchanged' }}"
+      - "Floating IPs: {{ 'updated to ' + (quota_floating_ip | string) if (quota_checks.neutron_needs_update | default(false) and quota_floating_ip is defined) else 'unchanged' }}"
