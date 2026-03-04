@@ -63,6 +63,6 @@
 
     # ========================================================================
     - name: Execute OpenStack Purchase Subscription Role
-      roles:
-        - openstack_purchase_subscription 
+      include_role:
+        name: openstack_purchase_subscription 
       when : provider_secret.type == "openstack"
