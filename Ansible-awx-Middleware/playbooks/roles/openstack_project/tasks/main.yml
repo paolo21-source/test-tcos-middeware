@@ -38,7 +38,7 @@
 
 - name: Display project existence status
   debug:
-    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ')' if project_context.project_exists else 'does not exist' }}"
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ', description: ' + project_context.project_description + ')' if project_context.project_exists else 'does not exist' }}"
 
 - name: Create OpenStack project (if not exists)
   uri:
@@ -69,6 +69,7 @@
   register: project_create
   when: not project_context.project_exists
 
+
 - name: Update project_id with newly created project
   set_fact:
     project_context:
@@ -77,6 +78,10 @@
   when: 
     - not project_context.project_exists
     - project_create.json.project.id is defined
+
+- name: Display created project 
+  debug:
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ', description: ' + project_context.project_description + ')' if project_context.project_exists else 'does not exist' }}"
 
 - name: Check if sync user role is assigned to project
   uri:
