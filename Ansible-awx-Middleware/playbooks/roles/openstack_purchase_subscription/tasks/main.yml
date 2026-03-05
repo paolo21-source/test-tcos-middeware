@@ -106,7 +106,7 @@
     # ========================================================================
     - name: "1) Check if MASTER project exists and retrieve ID"
       include_role:
-        name: openstack_project
+        name: openstack_project_check
         # Nota: valutare se openstack_project gestisce già solo il check
         # oppure creare un ruolo openstack_project_check dedicato
       vars:

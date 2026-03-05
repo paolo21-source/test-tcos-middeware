@@ -1,4 +1,4 @@
-- name: Validate openstack_project role arguments
+- name: Validate openstack_project arguments
   assert:
     that:
       - project_name is defined and project_name != ""
@@ -8,16 +8,17 @@
     url: "{{ provider_secret.endpoint }}/projects?name={{ project_name }}"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: project_search
 
 - name: Set project_exists flag
   set_fact:
-    project_exists: "{{ project_search.json.projects | length > 0 }}"
-    project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
+    project_context:
+      project_exists: "{{ project_search.json.projects | length > 0 }}"
+      project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
 
 - name: Display project existence status
   debug:
-    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_id + ')' if project_exists else 'does not exist' }}"
+    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ')' if project_context.project_exists else 'does not exist' }}"
