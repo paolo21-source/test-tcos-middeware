@@ -2,7 +2,7 @@
 # roles/openstack_roles/tasks/main.yml
 - name: List current group roles on project
   uri:
-    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles"
     method: GET
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
@@ -34,7 +34,7 @@
 
 - name: Revoke ALL existing roles from group (if target role not already assigned)
   uri:
-    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ item }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ item }}"
     method: DELETE
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
@@ -49,7 +49,7 @@
   
 - name: Grant target role to group on project
   uri:
-    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
     method: PUT
     headers:
       X-Auth-Token: "{{ auth_context.provider_token }}"
