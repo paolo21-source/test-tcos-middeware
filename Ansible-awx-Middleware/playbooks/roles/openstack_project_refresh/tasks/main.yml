@@ -1,8 +1,8 @@
 - name: Normalize project description for idempotency
   set_fact:
     normalized_project_description: >-
-      {{ master_project_context.project_description + '.' if not master_project_context.project_description.endswith('.')
-         else master_project_context.project_description.rstrip('.') }}
+      {{ project_description + '.' if not project_description.endswith('.')
+         else project_description.rstrip('.') }}
 
 - name: Update OpenStack project description 
   uri:
