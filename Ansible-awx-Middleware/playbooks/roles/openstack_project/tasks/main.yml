@@ -2,7 +2,7 @@
 # roles/openstack_project/tasks/main.yml
 # Validazione rigorosa di tutti i parametri richiesti
 
-- name: Validate openstack_project role arguments
+- name: Validate openstack_project arguments
   assert:
     that:
       - project_name is defined and project_name != ""

@@ -116,8 +116,8 @@
     - name: Verify MASTER project exists (fail if not found)
       assert:
         that:
-          - project_id is defined
-          - project_id != ""
+          - project_context.project_id is defined
+          - project_context.project_id != ""
         fail_msg: "ERROR: MASTER project not found for user_id {{ user_id }}. Cannot create subsequent subscription."
       when: not (is_first_subscription | bool)
 
