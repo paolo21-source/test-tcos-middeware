@@ -25,22 +25,21 @@
           - "External ID (Asset): {{ external_id }}"
           - "Request ID: {{ request_id }}"
           - "Is First Subscription: {{ is_first_subscription }}"
-    # Aggiungere controllo per vedere se è openstack o altro provider in base a provider_secret.type, per ora assumiamo sia sempre openstack e quindi eseguiamo autenticazione e setup specifico per OpenStack. In futuro, se si aggiungono altri provider, si potrà fare un branching in base al tipo di provider.
+
     - name: Check provider type
       assert:
         that:
           - provider_secret.type == "openstack"
         fail_msg: "Unsupported provider type: '{{ provider_secret.type }}'. Only 'openstack' is supported in this playbook."
+
     - name: Display provider info
       debug:
         msg:
           - "Provider Name: {{ provider_secret.providerName }}"
           - "Provider Endpoint: {{ provider_secret.endpoint }}"
-    #l'autenticazione la prende dal secret provider_client_tag che viene passato dal middleware e identifica le credenziali da usare per autenticarsi con OpenStack, quindi non serve passare altre variabili per l'autenticazione se non il provider_client_tag stesso, che però non è definito in questo playbook ma viene passato direttamente dal middleware. Quindi il ruolo openstack_auth deve essere in grado di prendere il provider_client_tag dalle variabili di ambiente o dalle variabili passate dal middleware e usarlo per autenticarsi con OpenStack.
+
     # ========================================================================
     # AUTHENTICATION
-    # provider_client_tag viene dal middleware e identifica le credenziali
-    # nella config map da usare per autenticarsi con OpenStack
     # ========================================================================
     - name: Authenticate with OpenStack
       include_role:
@@ -55,39 +54,73 @@
       vars:
         project_name: "{{ user_id }}"
         project_description: "{{ 'Provider project for customer ' + user_id }}"
-        request_id: "{{ request_id }}"
+        rquest_id: "{{ request_id }}"
         product_id: "{{ product_id }}"
-        hub_id: "{{ hub_id }}" 
+        hub_id: "{{ hub_id }}"
         user_id: "{{ user_id }}"
         user_email: "{{ user_email }}"
         subscription_id: "{{ subscription_id }}"
         external_id: "{{ external_id }}"
-        is_first_subscription: "{{ is_first_subscription | bool}}"
+        is_first_subscription: "{{ is_first_subscription | bool }}"
         activation_template_id: "{{ activation_template_id }}"
         project_type: MASTER
-        parent_project_id: "{{ provider_secret.projectId }}" 
+        parent_project_id: "{{ provider_secret.projectId }}"
       when: is_first_subscription | bool
-      
 
     - name: Save MASTER project ID
       set_fact:
-        master_project_context: 
+        master_project_context:
           project_id: "{{ project_context.project_id }}"
       when: is_first_subscription | bool
 
-    - name: "2) Create MASTER group"
-      include_role:
-        name: openstack_group
-      vars:
-        group_name: "{{ user_id }}"
+    - name: "2) Search MASTER group"
+      uri:
+        url: "{{ provider_secret.endpoint }}/groups?name={{ user_id }}&domain_id={{ provider_secret.groupDomainId }}"
+        method: GET
+        headers:
+          X-Auth-Token: "{{ auth_context.provider_token }}"
+        status_code: 200
+        return_content: yes
+      register: master_group_search
       when: is_first_subscription | bool
 
-    - name: Save MASTER group ID
+    - name: "2) Set MASTER group_exists flag"
       set_fact:
-        master_projet_context:
-          group_id: "{{ group_context.group_id }}"
+        master_group_exists: "{{ master_group_search.json.groups | length > 0 }}"
+        master_group_id: "{{ master_group_search.json.groups[0].id if master_group_search.json.groups | length > 0 else '' }}"
       when: is_first_subscription | bool
 
+    - name: "2) Display MASTER group existence status"
+      debug:
+        msg: "Group '{{ user_id }}' {{ 'exists (ID: ' + master_group_id + ')' if master_group_exists else 'does not exist' }}"
+      when: is_first_subscription | bool
+
+    - name: "2) Create MASTER group (if not exists)"
+      uri:
+        url: "{{ provider_secret.endpoint }}/groups"
+        method: POST
+        headers:
+          X-Auth-Token: "{{ auth_context.provider_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          group:
+            name: "{{ user_id }}"
+            domain_id: "{{ provider_secret.groupDomainId }}"
+        status_code: 201
+        return_content: yes
+      register: master_group_create
+      when:
+        - is_first_subscription | bool
+        - not master_group_exists
+
+    - name: "2) Update MASTER group ID with newly created group"
+      set_fact:
+        master_group_id: "{{ master_group_create.json.group.id }}"
+      when:
+        - is_first_subscription | bool
+        - not master_group_exists
+        - master_group_create.json.group.id is defined
 
     - name: "4) Set ZERO quotas on MASTER project"
       include_role:
@@ -107,8 +140,6 @@
     - name: "1) Check if MASTER project exists and retrieve ID"
       include_role:
         name: openstack_project
-        # Nota: valutare se openstack_project gestisce già solo il check
-        # oppure creare un ruolo openstack_project_check dedicato
       vars:
         project_name: "{{ user_id }}"
       when: not (is_first_subscription | bool)
@@ -127,26 +158,27 @@
           project_id: "{{ project_context.project_id }}"
       when: not (is_first_subscription | bool)
 
-    - name: "2) Check if MASTER group exists and retrieve ID"
-      include_role:
-        name: openstack_group
-        # Stessa considerazione del project: valutare ruolo dedicato al check
-      vars:
-        group_name: "{{ user_id }}"
+    - name: "2) Search MASTER group"
+      uri:
+        url: "{{ provider_secret.endpoint }}/groups?name={{ user_id }}&domain_id={{ provider_secret.groupDomainId }}"
+        method: GET
+        headers:
+          X-Auth-Token: "{{ auth_context.provider_token }}"
+        status_code: 200
+        return_content: yes
+      register: master_group_search
       when: not (is_first_subscription | bool)
 
     - name: Verify MASTER group exists (fail if not found)
       assert:
         that:
-          - group_id is defined
-          - group_id != ""
+          - master_group_search.json.groups | length > 0
         fail_msg: "ERROR: MASTER group not found for user_id {{ user_id }}. Cannot create subsequent subscription."
       when: not (is_first_subscription | bool)
 
     - name: Save MASTER group ID
       set_fact:
-        master_project_context:
-          group_id: "{{ group_context.group_id }}" 
+        master_group_id: "{{ master_group_search.json.groups[0].id }}"
       when: not (is_first_subscription | bool)
 
     # ========================================================================
@@ -158,9 +190,9 @@
       vars:
         project_name: "{{ external_id }}"
         project_description: "{{ 'Provider project for customer ' + user_id }}"
-        request_id: "{{ request_id }}"
+        rquest_id: "{{ request_id }}"
         product_id: "{{ product_id }}"
-        hub_id: "{{ hub_id }}" 
+        hub_id: "{{ hub_id }}"
         user_id: "{{ user_id }}"
         user_email: "{{ user_email }}"
         subscription_id: "{{ subscription_id }}"
@@ -172,34 +204,65 @@
 
     - name: Save SUBSCRIPTION project ID
       set_fact:
-        subscription_project_context:
-          project_id: "{{ project_context.project_id }}" 
+        subscription_project_id: "{{ project_context.project_id }}"
 
-    - name: "6) Check and create SUBSCRIPTION group"
-      include_role:
-        name: openstack_group
-      vars:
-        group_name: "{{ external_id }}"
+    - name: "6) Search SUBSCRIPTION group"
+      uri:
+        url: "{{ provider_secret.endpoint }}/groups?name={{ external_id }}&domain_id={{ provider_secret.groupDomainId }}"
+        method: GET
+        headers:
+          X-Auth-Token: "{{ auth_context.provider_token }}"
+        status_code: 200
+        return_content: yes
+      register: subscription_group_search
 
-    - name: Save SUBSCRIPTION group ID
+    - name: "6) Set SUBSCRIPTION group_exists flag"
       set_fact:
-        subscription_project_context:
-          group_id: "{{ group_context.group_id }}" 
+        subscription_group_exists: "{{ subscription_group_search.json.groups | length > 0 }}"
+        subscription_group_id: "{{ subscription_group_search.json.groups[0].id if subscription_group_search.json.groups | length > 0 else '' }}"
+
+    - name: "6) Display SUBSCRIPTION group existence status"
+      debug:
+        msg: "Group '{{ external_id }}' {{ 'exists (ID: ' + subscription_group_id + ')' if subscription_group_exists else 'does not exist' }}"
+
+    - name: "6) Create SUBSCRIPTION group (if not exists)"
+      uri:
+        url: "{{ provider_secret.endpoint }}/groups"
+        method: POST
+        headers:
+          X-Auth-Token: "{{ auth_context.provider_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          group:
+            name: "{{ external_id }}"
+            domain_id: "{{ provider_secret.groupDomainId }}"
+        status_code: 201
+        return_content: yes
+      register: subscription_group_create
+      when: not subscription_group_exists
+
+    - name: "6) Update SUBSCRIPTION group ID with newly created group"
+      set_fact:
+        subscription_group_id: "{{ subscription_group_create.json.group.id }}"
+      when:
+        - not subscription_group_exists
+        - subscription_group_create.json.group.id is defined
 
     - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
       include_role:
         name: openstack_project_group_role
       vars:
-        project_id: "{{ subscription_project_context.project_id }}"
-        group_id: "{{ master_project_context.group_id }}"
+        project_id: "{{ subscription_project_id }}"
+        group_id: "{{ master_group_id }}"
         role_id: "{{ provider_secret.activeGroupRoleId }}"
 
     - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
       include_role:
         name: openstack_project_group_role
       vars:
-        project_id: "{{ subscription_project_context.project_id }}"
-        group_id: "{{ subscription_group_context.group_id }}"
+        project_id: "{{ subscription_project_id }}"
+        group_id: "{{ subscription_group_id }}"
         role_id: "{{ provider_secret.activeGroupRoleId }}"
 
     # ========================================================================
@@ -208,9 +271,9 @@
     - name: "9) Update quotas on SUBSCRIPTION project"
       include_role:
         name: openstack_quotas
-      vars: 
-        project_id: "{{ subscription_project_context.project_id }}"
-        quota_vcpu: "{{ quota_vcpu }}" 
+      vars:
+        project_id: "{{ subscription_project_id }}"
+        quota_vcpu: "{{ quota_vcpu }}"
         quota_ram: "{{ quota_ram }}"
         quota_storage: "{{ quota_storage }}"
         quota_pub_ip: "{{ quota_pub_ip }}"
@@ -223,8 +286,8 @@
       debug:
         msg:
           - "=== {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION COMPLETED ==="
-          - "MASTER Project ID: {{ master_project_context.project_id }}"
-          - "MASTER Group ID: {{ master_project_context.group_id }}"
-          - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
-          - "SUBSCRIPTION Group ID: {{ subscription_project_context.group_id }}"
+          - "MASTER Project ID:       {{ master_project_context.project_id }}"
+          - "MASTER Group ID:         {{ master_group_id }}"
+          - "SUBSCRIPTION Project ID: {{ subscription_project_id }}"
+          - "SUBSCRIPTION Group ID:   {{ subscription_group_id }}"
           - "Status: Active"
