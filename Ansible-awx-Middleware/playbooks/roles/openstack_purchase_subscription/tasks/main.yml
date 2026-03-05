@@ -55,7 +55,7 @@
       vars:
         project_name: "{{ user_id }}"
         project_description: "{{ 'Provider project for customer ' + user_id }}"
-        rquest_id: "{{ request_id }}"
+        request_id: "{{ request_id }}"
         product_id: "{{ product_id }}"
         hub_id: "{{ hub_id }}" 
         user_id: "{{ user_id }}"
@@ -158,7 +158,7 @@
       vars:
         project_name: "{{ external_id }}"
         project_description: "{{ 'Provider project for customer ' + user_id }}"
-        rquest_id: "{{ request_id }}"
+        request_id: "{{ request_id }}"
         product_id: "{{ product_id }}"
         hub_id: "{{ hub_id }}" 
         user_id: "{{ user_id }}"
