@@ -96,6 +96,7 @@
       vars:
         project_id: "{{ master_project_context.project_id }}"
         project_description: "{{ master_project_context.project_description }}"
+      when: is_first_subscription | bool
 
     # ========================================================================
     # STEP 1 [SUBSEQUENT ONLY]: RETRIEVE MASTER PROJECT + GROUP
