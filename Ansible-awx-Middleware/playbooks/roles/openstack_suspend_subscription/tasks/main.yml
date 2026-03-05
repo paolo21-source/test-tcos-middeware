@@ -60,7 +60,7 @@
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ subscription_group_context.group_id }}"
-        role_id: "{{ provider_secret.suspended_role_id }}"
+        role_id: "{{ provider_secret.suspendedGroupRoleId }}"
 
     # ========================================================================
     # COMPLETION
@@ -71,6 +71,6 @@
           - "=== SUSPEND SUBSCRIPTION COMPLETED ==="
           - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
           - "SUBSCRIPTION Group ID: {{ subscription_group_context.group_id }}"
-          - "SUBSCRIPTION Role ID: {{ provider_secret.suspended_role_id }}"
+          - "SUBSCRIPTION Role ID: {{ provider_secret.suspendedGroupRoleId }}"
           - "Status: Suspended"
 
