@@ -1,0 +1,57 @@
+    # ========================================================================
+    # VALIDATION
+    # ========================================================================
+    - name: Validate required variables from providers secret
+      include:_role:
+        name: openstack_provider_secret_validation
+        
+    # ================================================
+    # AUTHENTICATION
+    # ===============================================
+    - name: Authenticate with OpenStack
+      include_role:
+        name: openstack_auth
+
+    # ========================================================================
+    # STEP 1: RETRIEVE_SUBSCRIPTION_PROJECT
+    # ========================================================================
+    - name: "1) Check if SUBSCRIPTION project exists"
+      include_role:
+        name: openstack_project_check
+      vars:
+        project_name: "{{ external_id }}"
+
+    - name: Verify SUBSCRIPTION project exists (fail if not found)
+      assert:
+        that:
+          - project_context.project_id is defined
+          - project_context.project_id != ""
+        fail_msg: "ERROR: SUBSCRIPTION project not found for external_id {{ external_id }}"
+
+    - name: Save SUBSCRIPTION project ID
+      set_fact:
+        subscription_project_context:
+          project_id: "{{ project_context.project_id }}"
+
+    # ========================================================================
+    # STEP 2: SETUP_QUOTA_ON_SUBSCRIPTION_PROJECT
+    # ========================================================================
+    - name: "2) Update quotas on SUBSCRIPTION project (only if different)"
+      include_role:
+        name: openstack_quotas
+      vars:
+        project_id: "{{ subscription_project_context.project_id }}"
+        quota_vcpu: "{{ quota_vcpu }}" 
+        quota_ram: "{{ quota_ram }}"
+        quota_storage: "{{ quota_storage }}"
+        quota_pub_ip: "{{ quota_pub_ip }}"
+        quota_backup: "{{ quota_backup }}"
+    # ========================================================================
+    # COMPLETION
+    # ========================================================================
+    - name: Display completion summary
+      debug:
+        msg:
+          - "=== CHANGE SUBSCRIPTION COMPLETED ==="
+          - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
+          - "Quotas updated successfully"

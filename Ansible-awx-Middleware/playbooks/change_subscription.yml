@@ -11,76 +11,25 @@
     - name: Validate required variables
       assert:
         that:
+          - provider_client_tag is defined and provider_client_tag != ""
           - external_id is defined and external_id != ""
-          - request_id is defined
-          - user_id is defined and user_id != ""
-          - parent_project_id is defined and parent_project_id != ""
-          - subscription_id is defined and subscription_id != ""
-          - product_id is defined and product_id != ""
-          - hub_id is defined and hub_id != ""
-          - activation_template_id is defined and activation_template_id != ""
-          - user_email is defined and user_email != ""
-          - is_first_subscription is defined and (is_first_subscription == true or is_first_subscription == false)
-          - |
-            quota_vcpu is defined or quota_ram_mb is defined or 
-            quota_storage_gb is defined or quota_backup_gb is defined or 
-            quota_floating_ip is defined
         fail_msg: "Missing required variables: external_id, request_id or quota parameters (at least one quota must be defined)"
-    
-    - name: Check if any quota has changed
-      set_fact:
-        quota_changed: true
 
-    - name: Display operation summary
-      debug:
-        msg:
-          - "=== CHANGE SUBSCRIPTION ==="
-          - "External ID: {{ external_id }}"
-          - "Request ID: {{ request_id }}"
+
 # Stessa cosa per tutte le autenticazioni 
     # ========================================================================
-    # AUTHENTICATION
+    # EXECUTE CHANGE
     # ========================================================================
-    - name: Authenticate with OpenStack
+    - name: Execute Openstack Change Subscription Role
       include_role:
-        name: openstack_auth
-
-    # ========================================================================
-    # STEP 1: RETRIEVE_SUBSCRIPTION_PROJECT
-    # ========================================================================
-    - name: "1) Check if SUBSCRIPTION project exists"
-      include_role:
-        name: openstack_project_check
+        name: openstack_change_subscription
+      when: provider_secret.type == "openstack"
       vars:
-        project_name: "{{ external_id }}"
-        check_sync_user_role: false
+        provider_client_tag: "{{ provider_client_tag }}"
+        external_id: "{{ external_id }}"
+        quota_vcpu: "{{ quota_vcpu }}"
+        quota_ram: "{{ quota_ram }}"
+        quota_storage: "{{ quota_storage }}"
+        quota_pub_ip: "{{ quota_pub_ip }}"
+        quota_backup: "{{ quota_backup }}"
 
-    - name: Verify SUBSCRIPTION project exists (fail if not found)
-      assert:
-        that:
-          - project_id is defined
-          - project_id != ""
-        fail_msg: "ERROR: SUBSCRIPTION project not found for external_id {{ external_id }}"
-
-    - name: Save SUBSCRIPTION project ID
-      set_fact:
-        subscription_project_id: "{{ project_id }}"
-
-    # ========================================================================
-    # STEP 2: SETUP_QUOTA_ON_SUBSCRIPTION_PROJECT
-    # ========================================================================
-    - name: "2) Update quotas on SUBSCRIPTION project (only if different)"
-      include_role:
-        name: openstack_quotas
-      vars:
-        target_project_id: "{{ subscription_project_id }}"
-
-    # ========================================================================
-    # COMPLETION
-    # ========================================================================
-    - name: Display completion summary
-      debug:
-        msg:
-          - "=== CHANGE SUBSCRIPTION COMPLETED ==="
-          - "SUBSCRIPTION Project ID: {{ subscription_project_id }}"
-          - "Quotas updated successfully"

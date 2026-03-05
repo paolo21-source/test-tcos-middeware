@@ -1,0 +1,18 @@
+    # ========================================================================
+    # VALIDATION
+    # ========================================================================
+    - name: Validate required variables from providers secret
+      assert:
+        that:
+          - "'providerId' in provider_secret and provider_secret.providerId != ''"
+          - "'providerName' in provider_secret and provider_secret.providerName != ''"
+          - "'type' in provider_secret and provider_secret.type != ''"
+          - "'endpoint' in provider_secret and provider_secret.endpoint != ''"
+          - "'password' in provider_secret and provider_secret.password != ''"
+          - "'syncUserId' in provider_secret and provider_secret.syncUserId != ''"
+          - "'syncRoleId' in provider_secret and provider_secret.syncRoleId != ''"
+          - "'groupDomainId' in provider_secret and provider_secret.groupDomainId != ''"
+          - "'activeGroupRoleId' in provider_secret and provider_secret.activeGroupRoleId != ''"
+          - "'suspendedGroupRoleId' in provider_secret and provider_secret.suspendedGroupRoleId != ''"
+          - "'cancelledGroupRoleId' in provider_secret and provider_secret.cancelledGroupRoleId != ''"
+        fail_msg: "Missing required provider configuration for provider_client_tag: '{{ provider_client_tag }}'"
