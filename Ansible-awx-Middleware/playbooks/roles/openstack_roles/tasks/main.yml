@@ -2,26 +2,28 @@
 # roles/openstack_roles/tasks/main.yml
 - name: List current group roles on project
   uri:
-    url: "{{ openstack_auth_url }}/projects/{{ target_project_id }}/groups/{{ target_group_id }}/roles"
+    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles"
     method: GET
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
   register: current_roles
 
 - name: Extract current role IDs
   set_fact:
-    current_role_ids: "{{ current_roles.json.roles | map(attribute='id') | list }}"
+    role_context:
+      current_role_ids: "{{ current_roles.json.roles | map(attribute='id') | list }}"
 
 - name: Check if target role is already assigned
   set_fact:
-    target_role_assigned: "{{ target_role_id in current_role_ids }}"
+    role_checks:
+      is_role_assigned: "{{ role_id in role_context.current_role_ids }}"
 
 - name: Display role assignment status
   debug:
     msg: >
-      {% if target_role_assigned %}
+      {% if role_checks.is_role_assigned %}
       Target role already assigned - no changes needed (idempotent)
       {% else %}
       Target role not assigned - will update roles
@@ -32,31 +34,32 @@
 
 - name: Revoke ALL existing roles from group (if target role not already assigned)
   uri:
-    url: "{{ openstack_auth_url }}/projects/{{ target_project_id }}/groups/{{ target_group_id }}/roles/{{ item }}"
+    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ item }}"
     method: DELETE
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 
       - 204
       - 404  # Ignore if role was not assigned
   loop: "{{ current_role_ids }}"
   when: 
-    - not target_role_assigned | bool
+    - not role_checks.is_role_assigned | bool
     - current_role_ids | length > 0
-
+    - item in handled_roles  # Only revoke roles that are in the handled_roles list
+  
 - name: Grant target role to group on project
   uri:
-    url: "{{ openstack_auth_url }}/projects/{{ target_project_id }}/groups/{{ target_group_id }}/roles/{{ target_role_id }}"
+    url: "{{ provider_client.endpoint }}/projects/{{ project_id }}/groups/{{ group_id }}/roles/{{ role_id }}"
     method: PUT
     headers:
-      X-Auth-Token: "{{ os_token }}"
+      X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 204
-  when: not target_role_assigned | bool
+  when: not role_checks.is_role_assigned | bool
 
 - name: Display role change completion
   debug:
     msg: >
-      {% if target_role_assigned %}
+      {% if role_checks.is_role_assigned %}
       No changes made - target role already assigned
       {% else %}
       Revoked {{ current_role_ids | length }} existing role(s) and granted target role
