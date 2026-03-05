@@ -22,3 +22,23 @@ curl -k -v -X POST \
     }
 
   }'
+
+
+  #===========================================
+
+  curl -k -v -X POST \
+  https://services.linuxwall.it/api/v2/job_templates/78/launch/ \
+  -H "Content-Type: application/json" \
+  -u "user.staging:qunhah-gytjA4-qutmih" \
+  -d '{
+    "extra_vars": {
+        "provider_client_tag": "openstackMilano1",
+        "external_id": "SA-000004",
+        "quota_vcpu": "102",
+        "quota_ram": "102",
+        "quota_storage": "102",
+        "quota_pub_ip": "102",
+        "quota_backup": "102"
+    }
+
+  }'

@@ -14,6 +14,19 @@
           - provider_client_tag is defined and provider_client_tag != ""
           - external_id is defined and external_id != ""
         fail_msg: "Missing required variables: external_id, request_id or quota parameters (at least one quota must be defined)"
+ 
+    - name: Debug all vars
+      debug:
+        msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
+
+    - name: Parse providers config map
+      include_role:
+        name: providers_secret_parse
+      vars:
+        provider_client_tag: "{{ provider_client_tag }}"
+    - name: Save provider secret
+      set_fact:
+        provider_secret: "{{ provider_secret}}"
 
 
 # Stessa cosa per tutte le autenticazioni 

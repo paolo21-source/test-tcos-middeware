@@ -31,36 +31,18 @@
           - activation_template_id is defined and activation_template_id != ""
         fail_msg: "Missing required variables: user_id, external_id, request_id, is_first_subscription"
 
-    - name: Display operation summary
-      debug:
-        msg:
-          - "=== PURCHASE {{ 'FIRST' if is_first_subscription else 'SUBSEQUENT' }} SUBSCRIPTION ==="
-          - "User ID: {{ user_id }}"
-          - "External ID (Asset): {{ external_id }}"
-          - "Request ID: {{ request_id }}"
-          - "Is First Subscription: {{ is_first_subscription }}"
     - name: Debug all vars
       debug:
         msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
     - name: Parse providers config map
+      include_role:
+        name: providers_secret_parse
+      vars:
+        provider_client_tag: "{{ provider_client_tag }}"
+    - name: Save provider secret
       set_fact:
-        providers_secret: "{{ secret_yaml | from_yaml }}"
-    - name: Debug providers secret
-      debug:
-        var: providers_secret
-    - name: Fail if provider tag not found
-      fail:
-        msg: "Nessuna entry per provider_client_tag: '{{ provider_client_tag }}'"
-      when: provider_client_tag not in secret_yaml
-
-    - name: Get provider config
-      set_fact:
-        provider_secret: "{{ providers_secret[provider_client_tag] }}"
-    - name: Debug provider secret
-      debug:
-        var: provider_secret
+        provider_secret: "{{ provider_secret}}"
     
-
     # ========================================================================
     - name: Execute OpenStack Purchase Subscription Role
       include_role:
