@@ -84,7 +84,7 @@
 
     - name: Save MASTER group ID
       set_fact:
-        master_projet_context:
+        master_group_context:
           group_id: "{{ group_context.group_id }}"
       when: is_first_subscription | bool
 
@@ -138,8 +138,8 @@
     - name: Verify MASTER group exists (fail if not found)
       assert:
         that:
-          - group_id is defined
-          - group_id != ""
+          - group_context.group_id is defined
+          - group_context.group_id != ""
         fail_msg: "ERROR: MASTER group not found for user_id {{ user_id }}. Cannot create subsequent subscription."
       when: not (is_first_subscription | bool)
 
