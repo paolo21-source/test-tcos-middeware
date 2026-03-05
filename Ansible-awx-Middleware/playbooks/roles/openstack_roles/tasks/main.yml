@@ -14,6 +14,10 @@
   set_fact:
     role_context:
       assigned_role_ids: "{{ assigned_roles.json.roles | map(attribute='id') | list }}"
+      handled_role_ids: 
+          - "{{ provider_secret.activeGroupRoleId }}"
+          - "{{ provider_secret.suspendedGroupRoleId }}"
+          - "{{ provider_secret.cancelledGroupRoleId }}"
 
 - name: Check if target role is already assigned
   set_fact:
@@ -45,7 +49,7 @@
   when: 
     - not role_checks.is_role_assigned | bool
     - role_context.assigned_role_ids | length > 0
-    - item in handled_role_ids  # Only revoke roles that are in the handled_roles list
+    - item in role_context.handled_role_ids  # Only revoke roles that are in the handled_roles list
   
 - name: Grant target role to group on project
   uri:

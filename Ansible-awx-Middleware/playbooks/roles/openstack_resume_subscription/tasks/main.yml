@@ -1,0 +1,76 @@
+    # ========================================================================
+    # VALIDATION
+    # ========================================================================
+    - name: Validate required variables from providers secret
+      include_role:
+        name: openstack_provider_secret_validation
+    
+    # ========================================================================
+    # AUTHENTICATION
+    # ========================================================================
+    - name: Authenticate with OpenStack
+      include_role:
+        name: openstack_auth
+
+    # ========================================================================
+    # STEP 1: RETRIEVE_SUBSCRIPTION_PROJECT_AND_GROUP
+    # ========================================================================
+    - name: "1) Check if SUBSCRIPTION project exists"
+      include_role:
+        name: openstack_project_check 
+      vars:
+        project_name: "{{ external_id }}"
+
+    - name: Verify SUBSCRIPTION project exists (fail if not found)
+      assert:
+        that:
+          - project_context.project_id is defined
+          - project_context.project_id != ""
+        fail_msg: "ERROR: SUBSCRIPTION project not found for external_id {{ external_id }}"
+
+    - name: Save SUBSCRIPTION project ID
+      set_fact:
+        subscription_project_context:
+          project_id: "{{ project_context.project_id }}"
+
+    - name: "2) Check if SUBSCRIPTION group exists"
+      include_role:
+        name: openstack_group_check
+      vars:
+        group_name: "{{ external_id }}"
+
+    - name: Verify SUBSCRIPTION group exists (fail if not found)
+      assert:
+        that:
+          - group_context.group_id is defined
+          - group_context.group_id != ""
+        fail_msg: "ERROR: SUBSCRIPTION group not found for external_id {{ external_id }}"
+
+    - name: Save SUBSCRIPTION group ID
+      set_fact:
+        subscription_group_context:
+          group_id: "{{ group_context.group_id }}"
+
+    # ========================================================================
+    # STEP 2: ASSIGN_ACTIVE_ROLE
+    # ========================================================================
+    - name: "3) Change group role to ACTIVE (revoke all, grant active)"
+      include_role:
+        name: openstack_roles
+      vars:
+        project_id: "{{ subscription_project_context.project_id }}"
+        group_id: "{{ subscription_group_context.group_id }}"
+        role_id: "{{ provider_secret.activeGroupRoleId }}"
+
+    # ========================================================================
+    # COMPLETION
+    # ========================================================================
+    - name: Display completion summary
+      debug:
+        msg:
+          - "=== RESUME SUBSCRIPTION COMPLETED ==="
+          - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
+          - "SUBSCRIPTION Group ID: {{ subscription_group_context.group_id }}"
+          - "SUBSCRIPTION Role ID: {{ provider_secret.activeGroupRoleId }}"
+          - "Status: Active"
+
