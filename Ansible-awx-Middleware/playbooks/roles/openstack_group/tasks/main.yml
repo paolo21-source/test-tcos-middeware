@@ -46,4 +46,3 @@
   when: 
     - not group_context.group_exists
     - group_create.json.group.id is defined
-
