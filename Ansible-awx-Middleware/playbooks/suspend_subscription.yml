@@ -37,7 +37,7 @@
       vars:
         provider_client_tag: "{{ provider_client_tag }}"
         external_id: "{{ external_id }}"
-        handled_roles: 
+        handled_role_ids: 
           - "{{ provider_secret.activeGroupRoleId }}"
           - "{{ provider_secret.suspendedGroupRoleId }}"
           - "{{ provider_secret.cancelledGroupRoleId }}"

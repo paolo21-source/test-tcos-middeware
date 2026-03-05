@@ -8,17 +8,17 @@
       X-Auth-Token: "{{ auth_context.provider_token }}"
     status_code: 200
     return_content: yes
-  register: current_roles
+  register: assigned_roles
 
 - name: Extract current role IDs
   set_fact:
     role_context:
-      current_role_ids: "{{ current_roles.json.roles | map(attribute='id') | list }}"
+      assigned_role_ids: "{{ assigned_roles.json.roles | map(attribute='id') | list }}"
 
 - name: Check if target role is already assigned
   set_fact:
     role_checks:
-      is_role_assigned: "{{ role_id in role_context.current_role_ids }}"
+      is_role_assigned: "{{ role_id in role_context.assigned_role_ids }}"
 
 - name: Display role assignment status
   debug:
@@ -41,11 +41,11 @@
     status_code: 
       - 204
       - 404  # Ignore if role was not assigned
-  loop: "{{ current_role_ids }}"
+  loop: "{{ role_context.assigned_role_ids }}"
   when: 
     - not role_checks.is_role_assigned | bool
-    - current_role_ids | length > 0
-    - item in handled_roles  # Only revoke roles that are in the handled_roles list
+    - role_context.assigned_role_ids | length > 0
+    - item in handled_role_ids  # Only revoke roles that are in the handled_roles list
   
 - name: Grant target role to group on project
   uri:
@@ -62,5 +62,5 @@
       {% if role_checks.is_role_assigned %}
       No changes made - target role already assigned
       {% else %}
-      Revoked {{ current_role_ids | length }} existing role(s) and granted target role
+      Revoked {{ role_context.assigned_role_ids | length }} existing role(s) and granted target role
       {% endif %}
