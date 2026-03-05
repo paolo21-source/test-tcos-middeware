@@ -33,7 +33,7 @@
     # ========================================================================
     - name: Execute Openstack Cancel Subscription Role
       include_role:
-        name: openstack_cancel_subscription
+        name: openstack_subscription_cancel
       when: provider_secret.type == "openstack"
       vars:
         provider_client_tag: "{{ provider_client_tag }}"

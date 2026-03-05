@@ -35,7 +35,7 @@
     # ========================================================================
     - name: Execute Openstack Change Subscription Role
       include_role:
-        name: openstack_change_subscription
+        name: openstack_subscription_change
       when: provider_secret.type == "openstack"
       vars:
         provider_client_tag: "{{ provider_client_tag }}"

@@ -4,20 +4,20 @@
     - name: Validate required variables from providers secret
       include_role:
         name: openstack_provider_secret_validation
-        
-    # ================================================
+    
+    # ========================================================================
     # AUTHENTICATION
-    # ===============================================
+    # ========================================================================
     - name: Authenticate with OpenStack
       include_role:
         name: openstack_auth
 
     # ========================================================================
-    # STEP 1: RETRIEVE_SUBSCRIPTION_PROJECT
+    # STEP 1: RETRIEVE_SUBSCRIPTION_PROJECT_AND_GROUP
     # ========================================================================
     - name: "1) Check if SUBSCRIPTION project exists"
       include_role:
-        name: openstack_project_check
+        name: openstack_project_check 
       vars:
         project_name: "{{ external_id }}"
 
@@ -33,25 +33,44 @@
         subscription_project_context:
           project_id: "{{ project_context.project_id }}"
 
-    # ========================================================================
-    # STEP 2: SETUP_QUOTA_ON_SUBSCRIPTION_PROJECT
-    # ========================================================================
-    - name: "2) Update quotas on SUBSCRIPTION project (only if different)"
+    - name: "2) Check if SUBSCRIPTION group exists"
       include_role:
-        name: openstack_quotas
+        name: openstack_group_check
+      vars:
+        group_name: "{{ external_id }}"
+
+    - name: Verify SUBSCRIPTION group exists (fail if not found)
+      assert:
+        that:
+          - group_context.group_id is defined
+          - group_context.group_id != ""
+        fail_msg: "ERROR: SUBSCRIPTION group not found for external_id {{ external_id }}"
+
+    - name: Save SUBSCRIPTION group ID
+      set_fact:
+        subscription_group_context:
+          group_id: "{{ group_context.group_id }}"
+
+    # ========================================================================
+    # STEP 2: ASSIGN_SUSPEND_ROLE
+    # ========================================================================
+    - name: "3) Change group role to SUSPENDED (revoke all, grant suspended)"
+      include_role:
+        name: openstack_project_group_role_change
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
-        quota_vcpu: "{{ quota_vcpu }}" 
-        quota_ram: "{{ quota_ram }}"
-        quota_storage: "{{ quota_storage }}"
-        quota_pub_ip: "{{ quota_pub_ip }}"
-        quota_backup: "{{ quota_backup }}"
+        group_id: "{{ subscription_group_context.group_id }}"
+        role_id: "{{ provider_secret.suspendedGroupRoleId }}"
+
     # ========================================================================
     # COMPLETION
     # ========================================================================
     - name: Display completion summary
       debug:
         msg:
-          - "=== CHANGE SUBSCRIPTION COMPLETED ==="
+          - "=== SUSPEND SUBSCRIPTION COMPLETED ==="
           - "SUBSCRIPTION Project ID: {{ subscription_project_context.project_id }}"
-          - "Quotas updated successfully"
+          - "SUBSCRIPTION Group ID: {{ subscription_group_context.group_id }}"
+          - "SUBSCRIPTION Role ID: {{ provider_secret.suspendedGroupRoleId }}"
+          - "Status: Suspended"
+

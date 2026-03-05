@@ -141,8 +141,9 @@
   debug:
     msg:
       - "=== Quota Update Summary ==="
-      - "vCPU: {{ 'updated to ' + (quota_vcpu | string) if (quota_checks.nova_needs_update | default(false) and quota_vcpu is defined) else 'unchanged' }}"
-      - "RAM (MB): {{ 'updated to ' + (quota_ram | string) if (quota_checks.nova_needs_update | default(false) and quota_ram is defined) else 'unchanged' }}"
-      - "Storage (GB): {{ 'updated to ' + (quota_storage| string) if (quota_checks.cinder_needs_update | default(false) and quota_storage is defined) else 'unchanged' }}"
-      - "Backup (GB): {{ 'updated to ' + (quota_backup | string) if (quota_checks.cinder_needs_update | default(false) and quota_backup is defined) else 'unchanged' }}"
-      - "Floating IPs: {{ 'updated to ' + (quota_pub_ip | string) if (quota_checks.neutron_needs_update | default(false) and quota_pub_ip is defined) else 'unchanged' }}"
+      - "vCPU: {{ 'updated to ' + (quota_vcpu | string) if (quota_vcpu is defined) else 'unchanged' }}"
+      - "RAM (MB): {{ 'updated to ' + (quota_ram | string) if (quota_ram is defined) else 'unchanged' }}"
+      - "Storage (GB): {{ 'updated to ' + (quota_storage| string) if (quota_storage is defined) else 'unchanged' }}"
+      - "Backup (GB): {{ 'updated to ' + (quota_backup | string) if (quota_backup is defined) else 'unchanged' }}"
+      - "Floating IPs: {{ 'updated to ' + (quota_pub_ip | string) if (quota_pub_ip is defined) else 'unchanged' }}"
+

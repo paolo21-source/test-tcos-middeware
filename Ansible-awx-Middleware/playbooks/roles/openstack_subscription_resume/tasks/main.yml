@@ -56,7 +56,7 @@
     # ========================================================================
     - name: "3) Change group role to ACTIVE (revoke all, grant active)"
       include_role:
-        name: openstack_roles
+        name: openstack_project_group_role_change
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ subscription_group_context.group_id }}"

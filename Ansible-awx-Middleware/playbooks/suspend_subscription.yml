@@ -32,7 +32,7 @@
     # ========================================================================
     - name: Execute Openstack Suspend Subscription Role
       include_role:
-        name: openstack_suspend_subscription
+        name: openstack_subscription_suspend
       when: provider_secret.type == "openstack"
       vars:
         provider_client_tag: "{{ provider_client_tag }}"

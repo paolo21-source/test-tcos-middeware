@@ -34,6 +34,7 @@
     project_context:
       project_exists: "{{ project_search.json.projects | length > 0 }}"
       project_id: "{{ project_search.json.projects[0].id if project_search.json.projects | length > 0 else '' }}"
+      project_description: "{{ project_search.json.projects[0].description if project_search.json.projects | length > 0 else '' }}"
 
 - name: Display project existence status
   debug:
@@ -72,6 +73,8 @@
   set_fact:
     project_context:
       project_id: "{{ project_create.json.project.id }}"
+      project_description: "{{ project_search.json.projects[0].description if project_search.json.projects | length > 0 else '' }}"
+
   when: 
     - not project_context.project_exists
     - project_create.json.project.id is defined

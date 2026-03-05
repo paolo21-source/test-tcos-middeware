@@ -1,0 +1,25 @@
+- name: Normalize project description for idempotency
+  set_fact:
+    normalized_project_description: >-
+      {{ project_description + '.' if not project_description.endswith('.')
+         else project_description.rstrip('.') }}
+
+- name: Update OpenStack project description 
+  uri:
+    url: "{{ provider_secret.endpoint }}/projects/{{ project_context.project_id }}"
+    method: PATCH
+    headers:
+      X-Auth-Token: "{{ auth_context.provider_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      project:
+        description: "{{ normalized_project_description }}"
+    status_code: 200
+    return_content: yes
+  register: project_update
+  when: project_context.project_exists
+
+- name: Debug project
+  debug:
+    msg: "Project '{{ project_name }}' {{ 'updated (ID: ' + project_update.json.project.id + ')' }}"

@@ -33,7 +33,7 @@
     # ========================================================================
     - name: Execute Openstack Resume Subscription Role
       include_role:
-        name: openstack_resume_subscription
+        name: openstack_subscription_resume
       when: provider_secret.type == "openstack"
       vars:
         provider_client_tag: "{{ provider_client_tag }}"

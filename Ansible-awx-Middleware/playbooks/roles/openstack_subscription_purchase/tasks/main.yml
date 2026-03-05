@@ -61,6 +61,7 @@
       set_fact:
         master_project_context: 
           project_id: "{{ project_context.project_id }}"
+          project_description: "{{ project_context.project_description }}"
       when: is_first_subscription | bool
 
     - name: "2) Create MASTER group"
@@ -88,6 +89,13 @@
         quota_pub_ip: 0
         quota_backup: 0
       when: is_first_subscription | bool
+
+    - name: Refresh MASTER project to apply quota changes
+      include_role:
+        name: openstack_project_refresh
+      vars:
+        project_id: "{{ master_project_context.project_id }}"
+        project_description: "{{ master_project_context.project_description }}"
 
     # ========================================================================
     # STEP 1 [SUBSEQUENT ONLY]: RETRIEVE MASTER PROJECT + GROUP
@@ -162,7 +170,8 @@
       set_fact:
         subscription_project_context:
           project_id: "{{ project_context.project_id }}" 
-
+          project_description: "{{ project_context.project_description }}"
+          
     - name: "6) Check and create SUBSCRIPTION group"
       include_role:
         name: openstack_group
@@ -176,7 +185,7 @@
 
     - name: "7) Grant ACTIVE role to MASTER group on SUBSCRIPTION project"
       include_role:
-        name: openstack_project_group_role
+        name: openstack_project_group_role_assign
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ master_group_context.group_id }}"
@@ -184,7 +193,7 @@
 
     - name: "8) Grant ACTIVE role to SUBSCRIPTION group on SUBSCRIPTION project"
       include_role:
-        name: openstack_project_group_role
+        name: openstack_project_group_role_assign
       vars:
         project_id: "{{ subscription_project_context.project_id }}"
         group_id: "{{ subscription_group_context.group_id }}"
@@ -203,7 +212,14 @@
         quota_storage: "{{ quota_storage }}"
         quota_pub_ip: "{{ quota_pub_ip }}"
         quota_backup: "{{ quota_backup }}"
-
+  
+    - name: Refresh SUBSCRIPTION project to apply quota changes
+      include_role:
+        name: openstack_project_refresh
+      vars:
+        project_id: "{{ subscription_project_context.project_id }}"
+        project_description: "{{ subscription_project_context.project_description }}"
+ 
     # ========================================================================
     # COMPLETION
     # ========================================================================

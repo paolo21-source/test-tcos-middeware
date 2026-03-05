@@ -46,7 +46,7 @@
     # ========================================================================
     - name: Execute OpenStack Purchase Subscription Role
       include_role:
-        name: openstack_purchase_subscription 
+        name: openstack_subscription_purchase 
       when : provider_secret.type == "openstack"
       vars:
         provider_client_tag: "{{ provider_client_tag }}" 
