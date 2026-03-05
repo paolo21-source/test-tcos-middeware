@@ -18,7 +18,6 @@
     status_code: 200
     return_content: yes
   register: project_update
-  when: project_context.project_exists
 
 - name: Debug project
   debug:
