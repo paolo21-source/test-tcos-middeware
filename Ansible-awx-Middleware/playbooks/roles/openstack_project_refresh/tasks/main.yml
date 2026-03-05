@@ -22,4 +22,4 @@
 
 - name: Debug project
   debug:
-    msg: "Project {{ project_name }} (ID: {{project_context.project_id}}, description: {{project_context.project_description}})" 
+    msg: "Project {{ project_name }} (ID: {{ project_context.project_id}}, description: {{project_context.project_description }})" 
