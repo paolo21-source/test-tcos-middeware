@@ -22,4 +22,4 @@
 
 - name: Display project existence status
   debug:
-    msg: "Project '{{ project_name }}' {{ 'exists (ID: ' + project_context.project_id + ', description: ' + project_context.project_description + ')' if project_context.project_exists else 'does not exist' }}"
+    msg: "Project {{ project_name }} {{ 'exists (ID: ' + project_context.project_id + ', description: ' + project_context.project_description + ')' if project_context.project_exists else 'does not exist' }}"

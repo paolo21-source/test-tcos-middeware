@@ -5,14 +5,14 @@ curl -k -v -X POST \
   -d '{
     "extra_vars": {
         "provider_client_tag": "openstackMilano1",
-        "external_id": "SA-000009",
+        "external_id": "SA-000011",
         "request_id": "PR-0000-0000-0001",
         "product_id": "PRD-000-000-000",
         "hub_id": "HB-0000-0000",
-        "user_id": "TA-0000-0000-0006",
+        "user_id": "TA-0000-0000-0007",
         "user_email": "user@email.it",
-        "subscription_id": "AS-0000-0000-0009",
-        "is_first_subscription": "true",
+        "subscription_id": "AS-0000-0000-0011",
+        "is_first_subscription": "false",
         "activation_template_id": "TL-000-000-000",
         "quota_vcpu": "101",
         "quota_ram": "101",
@@ -33,7 +33,7 @@ curl -k -v -X POST \
   -d '{
     "extra_vars": {
         "provider_client_tag": "openstackMilano1",
-        "external_id": "SA-000009",
+        "external_id": "SA-000011",
         "quota_vcpu": "102",
         "quota_ram": "102",
         "quota_storage": "102",
