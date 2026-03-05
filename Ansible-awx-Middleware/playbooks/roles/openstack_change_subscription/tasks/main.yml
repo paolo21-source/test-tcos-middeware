@@ -2,7 +2,7 @@
     # VALIDATION
     # ========================================================================
     - name: Validate required variables from providers secret
-      include:_role:
+      include_role:
         name: openstack_provider_secret_validation
         
     # ================================================
