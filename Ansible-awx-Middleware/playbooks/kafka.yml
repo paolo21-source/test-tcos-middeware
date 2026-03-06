@@ -1,8 +1,0 @@
-
-- name: List Kafka topics
-  shell: "kafka-topics.sh --bootstrap-server manageiq-kvm.corp.sourcesense.com:9093 --list --command-config /tmp/client.properties"
-  register: kafka_topics
-
-- name: Debug topics
-  debug:
-    msg: "{{ kafka_topics.stdout_lines }}"
