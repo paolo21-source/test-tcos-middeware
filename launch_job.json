@@ -81,3 +81,11 @@ curl -k -v -X POST \
         "external_id": "SA-000004"
     }
   }'
+
+
+
+  curl -k -s -X POST \
+  https://awx.collaudo.sourcesense.com/api/v2/job_templates/19/launch/ \
+  -H "Content-Type: application/json" \
+  -u "ansible:n30On0dOma9NCNRrNbxVv6cpDUHnPm78" \
+  -d '{}' | python3 -m json.tool
