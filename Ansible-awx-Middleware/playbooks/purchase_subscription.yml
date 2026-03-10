@@ -28,7 +28,7 @@
           - user_email is defined and user_email != ""
           - subscription_id is defined and subscription_id != ""
           - is_first_subscription is defined and (is_first_subscription == "true" or is_first_subscription == "false")
-          - activation_template_id is defined and activation_template_id != ""
+          - cloudblue_template_id is defined and cloudblue_template_id != ""
         fail_msg: "Missing required variables: user_id, external_id, request_id, is_first_subscription"
 
     - name: Debug all vars
@@ -58,7 +58,7 @@
         hub_id: "{{ hub_id }}"
         user_email: "{{ user_email }}"
         subscription_id: "{{ subscription_id }}"
-        activation_template_id: "{{ activation_template_id }}"
+        cloudblue_template_id: "{{ cloudblue_template_id }}"
         quota_vcpu: "{{ quota_vcpu }}"
         quota_ram: "{{ quota_ram }}"
         quota_storage: "{{ quota_storage }}"

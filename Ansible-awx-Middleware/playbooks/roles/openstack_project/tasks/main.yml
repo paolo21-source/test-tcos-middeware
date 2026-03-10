@@ -13,7 +13,7 @@
       - subscription_id is defined and subscription_id != ""
       - product_id is defined and product_id != ""
       - hub_id is defined and hub_id != ""
-      - activation_template_id is defined and activation_template_id != ""
+      - cloudblue_template_id is defined and cloudblue_template_id != ""
       - user_email is defined and user_email != ""
       - is_first_subscription is defined 
       - is_first_subscription | bool == true or is_first_subscription | bool == false
@@ -61,7 +61,7 @@
         subscriptionId: "{{ subscription_id }}"
         externalId: "{{ external_id }}"
         isFirstSubscription: "{{ is_first_subscription }}"
-        activationTemplateId: "{{ activation_template_id }}"
+        CloudBlueTemplateId: "{{ cloudblue_template_id }}"
         userEmail: "{{ user_email }}"
         type: "{{ project_type }}"
     status_code: 201

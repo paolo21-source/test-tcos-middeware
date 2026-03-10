@@ -51,7 +51,7 @@
         subscription_id: "{{ subscription_id }}"
         external_id: "{{ external_id }}"
         is_first_subscription: "{{ is_first_subscription | bool}}"
-        activation_template_id: "{{ activation_template_id }}"
+        cloudblue_template_id: "{{ cloudblue_template_id }}"
         project_type: MASTER
         parent_project_id: "{{ provider_secret.projectId }}" 
       when: is_first_subscription | bool
@@ -163,7 +163,7 @@
         subscription_id: "{{ subscription_id }}"
         external_id: "{{ external_id }}"
         is_first_subscription: "{{ is_first_subscription }}"
-        activation_template_id: "{{ activation_template_id }}"
+        cloudblue_template_id: "{{ cloudblue_template_id }}"
         project_type: SUBSCRIPTION
         parent_project_id: "{{ master_project_context.project_id }}"
 
