@@ -61,7 +61,7 @@
         subscriptionId: "{{ subscription_id }}"
         externalId: "{{ external_id }}"
         isFirstSubscription: "{{ is_first_subscription }}"
-        CloudBlueTemplateId: "{{ cloudblue_template_id }}"
+        cloudBlueTemplateId: "{{ cloudblue_template_id }}"
         userEmail: "{{ user_email }}"
         type: "{{ project_type }}"
     status_code: 201
