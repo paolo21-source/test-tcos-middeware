@@ -45,4 +45,5 @@
         quota_storage: "{{ quota_storage }}"
         quota_pub_ip: "{{ quota_pub_ip }}"
         quota_backup: "{{ quota_backup }}"
-
+        user_email: "{{ user_email }}"
+        cloudblue_template_id: "{{ cloudblue_template_id }}"
