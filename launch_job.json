@@ -1,19 +1,19 @@
 curl -k -v -X POST \
-  https://services.linuxwall.it/api/v2/job_templates/76/launch/ \
+  https://awx.collaudo.sourcesense.com/api/v2/workflow_job_templates/25/launch/ \
   -H "Content-Type: application/json" \
-  -u "user.staging:qunhah-gytjA4-qutmih" \
+  -u "ansible:n30On0dOma9NCNRrNbxVv6cpDUHnPm78" \
   -d '{
     "extra_vars": {
         "provider_client_tag": "openstackMilano1",
-        "external_id": "SA-000011",
-        "request_id": "PR-0000-0000-0001",
+        "external_id": "SA-000012",
+        "request_id": "PR-0000-0000-0002",
         "product_id": "PRD-000-000-000",
         "hub_id": "HB-0000-0000",
-        "user_id": "TA-0000-0000-0007",
+        "user_id": "TA-0000-0000-0008",
         "user_email": "user@email.it",
-        "subscription_id": "AS-0000-0000-0011",
-        "is_first_subscription": "false",
-        "activation_template_id": "TL-000-000-000",
+        "subscription_id": "AS-0000-0000-0012",
+        "is_first_subscription": "true",
+        "cloudblue_template_id": "TL-000-000-000",
         "quota_vcpu": "101",
         "quota_ram": "101",
         "quota_storage": "101",
