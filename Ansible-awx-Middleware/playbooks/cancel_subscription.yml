@@ -40,3 +40,13 @@
         external_id: "{{ external_id }}"
         user_email: "{{ user_email }}"
         cloudblue_template_id: "{{ cloudblue_template_id }}"
+
+    - name: Set workflow artifacts
+      set_stats:
+        data:
+          provider_client_tag: "{{ provider_client_tag }}"
+          request_id: "{{ request_id }}"
+          external_id: "{{ external_id }}"
+          user_email: "{{ user_email }}"
+          cloudblue_template_id: "{{ cloudblue_template_id }}"
+          provider_id: "{{ provider_secret.providerId }}"
