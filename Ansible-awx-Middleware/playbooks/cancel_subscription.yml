@@ -50,3 +50,4 @@
           user_email: "{{ user_email }}"
           cloudblue_template_id: "{{ cloudblue_template_id }}"
           provider_id: "{{ provider_secret.providerId }}"
+          request_type: "{{ provider_secret.requestType }}"
