@@ -48,7 +48,7 @@
           provider_id: "{{ provider_secret.providerId }}"
           provider_name: "{{ provider_secret.providerName }}"
           request_id: "{{ request_id }}"
-          request_type: "CANCEL"
+          request_type: "RESUME"
           external_id: "{{ external_id }}"
           user_email: "{{ user_email }}"
           cloudblue_template_id: "{{ cloudblue_template_id }}"
