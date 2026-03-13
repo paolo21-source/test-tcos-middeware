@@ -64,3 +64,15 @@
         quota_storage: "{{ quota_storage }}"
         quota_pub_ip: "{{ quota_pub_ip }}"
         quota_backup: "{{ quota_backup }}"
+
+    - name: Set workflow artifacts
+      set_stats:
+        data:
+          provider_client_tag: "{{ provider_client_tag }}"
+          provider_id: "{{ provider_secret.providerId }}"
+          provider_name: "{{ provider_secret.providerName }}"
+          request_id: "{{ request_id }}"
+          request_type: "CANCEL"
+          external_id: "{{ external_id }}"
+          user_email: "{{ user_email }}"
+          cloudblue_template_id: "{{ cloudblue_template_id }}"
