@@ -47,7 +47,7 @@ curl -k -v -X POST \
 
 
   curl -k -v -X POST \
-  https://awx.collaudo.sourcesense.com/api/v2/workflow_job_templates/25/launch/ \
+  https://awx.collaudo.sourcesense.com/api/v2/workflow_job_templates/27/launch/ \
   -H "Content-Type: application/json" \
   -u "ansible:n30On0dOma9NCNRrNbxVv6cpDUHnPm78" \
   -d '{
