@@ -8,47 +8,69 @@
   gather_facts: false
   
   tasks:
-    - name: Validate required variables
-      assert:
-        that:
-          - provider_client_tag is defined and provider_client_tag != ""
-          - external_id is defined and external_id != ""
-        fail_msg: "Missing required variables: external_id, request_id or quota parameters (at least one quota must be defined)"
+    - block:
+      - name: Validate required variables
+        assert:
+          that:
+            - provider_client_tag is defined and provider_client_tag != ""
+            - external_id is defined and external_id != ""
+          fail_msg: "Missing required variables: external_id, request_id or quota parameters (at least one quota must be defined)"
 
-    - name: Debug all vars
-      debug:
-        msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
+      - name: Debug all vars
+        debug:
+          msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
 
-    - name: Parse providers config map
-      include_role:
-        name: providers_secret_parse
-      vars:
-        provider_client_tag: "{{ provider_client_tag }}"
-    - name: Save provider secret
-      set_fact:
-        provider_secret: "{{ provider_secret}}"#Stessa cosa per tutte le autenticazioni, il provider_client_tag viene dal middleware e identifica le credenziali da usare per autenticarsi con OpenStack, quindi non serve passare altre variabili per l'autenticazione se non il provider_client_tag stesso, che però non è definito in questo playbook ma viene passato direttamente dal middleware. Quindi il ruolo openstack_auth deve essere in grado di prendere il provider_client_tag dalle variabili di ambiente o dalle variabili passate dal middleware e usarlo per autenticarsi con OpenStack.
-
-    # ========================================================================
-    # EXECUTE RESUME
-    # ========================================================================
-    - name: Execute Openstack Resume Subscription Role
-      include_role:
-        name: openstack_subscription_resume
-      when: provider_secret.type == "openstack"
-      vars:
-        provider_client_tag: "{{ provider_client_tag }}"
-        external_id: "{{ external_id }}"
-        user_email: "{{ user_email }}"
-        cloudblue_template_id: "{{ cloudblue_template_id }}"
-
-    - name: Set workflow artifacts
-      set_stats:
-        data:
+      - name: Parse providers config map
+        include_role:
+          name: providers_secret_parse
+        vars:
           provider_client_tag: "{{ provider_client_tag }}"
-          provider_id: "{{ provider_secret.providerId }}"
-          provider_name: "{{ provider_secret.providerName }}"
-          request_id: "{{ request_id }}"
-          request_type: "RESUME"
+      - name: Save provider secret
+        set_fact:
+          provider_secret: "{{ provider_secret}}"#Stessa cosa per tutte le autenticazioni, il provider_client_tag viene dal middleware e identifica le credenziali da usare per autenticarsi con OpenStack, quindi non serve passare altre variabili per l'autenticazione se non il provider_client_tag stesso, che però non è definito in questo playbook ma viene passato direttamente dal middleware. Quindi il ruolo openstack_auth deve essere in grado di prendere il provider_client_tag dalle variabili di ambiente o dalle variabili passate dal middleware e usarlo per autenticarsi con OpenStack.
+
+      # ========================================================================
+      # EXECUTE RESUME
+      # ========================================================================
+      - name: Execute Openstack Resume Subscription Role
+        include_role:
+          name: openstack_subscription_resume
+        when: provider_secret.type == "openstack"
+        vars:
+          provider_client_tag: "{{ provider_client_tag }}"
           external_id: "{{ external_id }}"
           user_email: "{{ user_email }}"
           cloudblue_template_id: "{{ cloudblue_template_id }}"
+
+      - name: Set workflow artifacts
+        set_stats:
+          data:
+            provider_client_tag: "{{ provider_client_tag }}"
+            provider_id: "{{ provider_secret.providerId }}"
+            provider_name: "{{ provider_secret.providerName }}"
+            request_id: "{{ request_id }}"
+            request_type: "RESUME"
+            external_id: "{{ external_id }}"
+            user_email: "{{ user_email }}"
+            cloudblue_template_id: "{{ cloudblue_template_id }}"
+
+      rescue:
+        - name: Set workflow artifacts on failure
+          set_stats:
+            data:
+              provider_client_tag: "{{ provider_client_tag }}"
+              provider_id: "{{ provider_secret.providerId }}"
+              provider_name: "{{ provider_secret.providerName }}"
+              request_id: "{{ request_id }}"
+              request_type: "RESUME"
+              external_id: "{{ external_id }}"
+              error: "PROVIDER_RESUME_OPERATION_FAILED"
+              errorDetail: "{{ ansible_failed_result.msg }}"
+              
+        - name: Debug failure
+          debug:
+            msg: "Resume subscription failed: {{ ansible_failed_result }}"
+
+        - name: Fail the job
+          fail:
+            msg: "Resume subscription failed"

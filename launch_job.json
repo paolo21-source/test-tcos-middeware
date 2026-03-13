@@ -53,7 +53,8 @@ curl -k -v -X POST \
   -d '{
     "extra_vars": {
         "provider_client_tag": "openstackMilano1",
-        "external_id": "SA-000020"
+        "external_id": "SA-000020",
+        "request_id": "PR-0000-0000-0010"
     }
   }'
 

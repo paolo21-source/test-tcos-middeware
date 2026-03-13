@@ -12,67 +12,89 @@
 
 
   tasks:
+    - block:
 
-    # ========================================================================
-    # VALIDATION
-    # ========================================================================
-    - name: Validate required variables
-      assert:
-        that:
-          - provider_client_tag is defined and provider_client_tag != ""
-          - external_id is defined and external_id != ""
-          - request_id is defined and request_id != ""
-          - product_id is defined and product_id != ""
-          - hub_id is defined and hub_id != ""
-          - user_id is defined and user_id != ""
-          - user_email is defined and user_email != ""
-          - subscription_id is defined and subscription_id != ""
-          - is_first_subscription is defined and (is_first_subscription == "true" or is_first_subscription == "false")
-          - cloudblue_template_id is defined and cloudblue_template_id != ""
-        fail_msg: "Missing required variables: user_id, external_id, request_id, is_first_subscription"
+      # ========================================================================
+      # VALIDATION
+      # ========================================================================
+      - name: Validate required variables
+        assert:
+          that:
+            - provider_client_tag is defined and provider_client_tag != ""
+            - external_id is defined and external_id != ""
+            - request_id is defined and request_id != ""
+            - product_id is defined and product_id != ""
+            - hub_id is defined and hub_id != ""
+            - user_id is defined and user_id != ""
+            - user_email is defined and user_email != ""
+            - subscription_id is defined and subscription_id != ""
+            - is_first_subscription is defined and (is_first_subscription == "true" or is_first_subscription == "false")
+            - cloudblue_template_id is defined and cloudblue_template_id != ""
+          fail_msg: "Missing required variables: user_id, external_id, request_id, is_first_subscription"
 
-    - name: Debug all vars
-      debug:
-        msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
-    - name: Parse providers config map
-      include_role:
-        name: providers_secret_parse
-      vars:
-        provider_client_tag: "{{ provider_client_tag }}"
-    - name: Save provider secret
-      set_fact:
-        provider_secret: "{{ provider_secret}}"
-    
-    # ========================================================================
-    - name: Execute OpenStack Purchase Subscription Role
-      include_role:
-        name: openstack_subscription_purchase 
-      when : provider_secret.type == "openstack"
-      vars:
-        provider_client_tag: "{{ provider_client_tag }}" 
-        user_id: "{{ user_id }}"
-        external_id: "{{ external_id }}"
-        request_id: "{{ request_id }}"
-        is_first_subscription: "{{ is_first_subscription }}"
-        product_id: "{{ product_id }}"
-        hub_id: "{{ hub_id }}"
-        user_email: "{{ user_email }}"
-        subscription_id: "{{ subscription_id }}"
-        cloudblue_template_id: "{{ cloudblue_template_id }}"
-        quota_vcpu: "{{ quota_vcpu }}"
-        quota_ram: "{{ quota_ram }}"
-        quota_storage: "{{ quota_storage }}"
-        quota_pub_ip: "{{ quota_pub_ip }}"
-        quota_backup: "{{ quota_backup }}"
-
-    - name: Set workflow artifacts
-      set_stats:
-        data:
+      - name: Debug all vars
+        debug:
+          msg: "{{ vars | dict2items | selectattr('key', 'search', 'credential|secret|yaml') | list }}"
+      - name: Parse providers config map
+        include_role:
+          name: providers_secret_parse
+        vars:
           provider_client_tag: "{{ provider_client_tag }}"
-          provider_id: "{{ provider_secret.providerId }}"
-          provider_name: "{{ provider_secret.providerName }}"
-          request_id: "{{ request_id }}"
-          request_type: "PURCHASE"
+      - name: Save provider secret
+        set_fact:
+          provider_secret: "{{ provider_secret}}"
+      
+      # ========================================================================
+      - name: Execute OpenStack Purchase Subscription Role
+        include_role:
+          name: openstack_subscription_purchase 
+        when : provider_secret.type == "openstack"
+        vars:
+          provider_client_tag: "{{ provider_client_tag }}" 
+          user_id: "{{ user_id }}"
           external_id: "{{ external_id }}"
+          request_id: "{{ request_id }}"
+          is_first_subscription: "{{ is_first_subscription }}"
+          product_id: "{{ product_id }}"
+          hub_id: "{{ hub_id }}"
           user_email: "{{ user_email }}"
+          subscription_id: "{{ subscription_id }}"
           cloudblue_template_id: "{{ cloudblue_template_id }}"
+          quota_vcpu: "{{ quota_vcpu }}"
+          quota_ram: "{{ quota_ram }}"
+          quota_storage: "{{ quota_storage }}"
+          quota_pub_ip: "{{ quota_pub_ip }}"
+          quota_backup: "{{ quota_backup }}"
+
+      - name: Set workflow artifacts
+        set_stats:
+          data:
+            provider_client_tag: "{{ provider_client_tag }}"
+            provider_id: "{{ provider_secret.providerId }}"
+            provider_name: "{{ provider_secret.providerName }}"
+            request_id: "{{ request_id }}"
+            request_type: "PURCHASE"
+            external_id: "{{ external_id }}"
+            user_email: "{{ user_email }}"
+            cloudblue_template_id: "{{ cloudblue_template_id }}"
+
+      rescue:
+        - name: Set workflow artifacts on failure
+          set_stats:
+            data:
+              provider_client_tag: "{{ provider_client_tag }}"
+              provider_id: "{{ provider_secret.providerId }}"
+              provider_name: "{{ provider_secret.providerName }}"
+              request_id: "{{ request_id }}"
+              request_type: "PURCHASE"
+              external_id: "{{ external_id }}"
+              error: "PROVIDER_PURCHASE_OPERATION_FAILED"
+              errorDetail: "{{ ansible_failed_result.msg }}"
+              
+        - name: Debug failure
+          debug:
+            msg: "Purchase subscription failed: {{ ansible_failed_result }}"
+
+        - name: Fail the job
+          fail:
+            msg: "Purchase subscription failed"
