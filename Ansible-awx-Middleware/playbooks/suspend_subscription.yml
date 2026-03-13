@@ -8,7 +8,7 @@
   gather_facts: false
   
   tasks:
-    - blocks:
+    - block:
       - name: Validate required variables
         assert:
           that:
