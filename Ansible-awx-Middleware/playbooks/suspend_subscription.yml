@@ -51,3 +51,24 @@
           external_id: "{{ external_id }}"
           user_email: "{{ user_email }}"
           cloudblue_template_id: "{{ cloudblue_template_id }}"
+
+      rescue:
+        - name: Set workflow artifacts on failure
+          set_stats:
+            data:
+              provider_client_tag: "{{ provider_client_tag }}"
+              provider_id: "{{ provider_secret.providerId }}"
+              provider_name: "{{ provider_secret.providerName }}"
+              request_id: "{{ request_id }}"
+              request_type: "SUSPEND"
+              external_id: "{{ external_id }}"
+              error: "PROVIDER_SUSPEND_OPERATION_FAILED"
+              errorDetail: "{{ ansible_failed_result.msg }}"
+          
+        - name: Debug failure
+          debug:
+            msg: "Suspend subscription failed: {{ ansible_failed_result }}"
+
+        - name: Fail the job
+          fail:
+            msg: "Suspend subscription failed"

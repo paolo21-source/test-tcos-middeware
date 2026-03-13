@@ -47,13 +47,13 @@ curl -k -v -X POST \
 
 
   curl -k -v -X POST \
-  https://services.linuxwall.it/api/v2/job_templates/80/launch/ \
+  https://awx.collaudo.sourcesense.com/api/v2/workflow_job_templates/25/launch/ \
   -H "Content-Type: application/json" \
-  -u "user.staging:qunhah-gytjA4-qutmih" \
+  -u "ansible:n30On0dOma9NCNRrNbxVv6cpDUHnPm78" \
   -d '{
     "extra_vars": {
         "provider_client_tag": "openstackMilano1",
-        "external_id": "SA-000004"
+        "external_id": "SA-000020"
     }
   }'
 
